@@ -94,6 +94,7 @@ public class BehanceGrabber extends Thread {
         this.main.start.setText( "Stop" );
         this.main.start.setIcon( new ImageIcon( this.getClass().getResource( "/kovalenko/elance/aligrabber/resources/cross-button.png" ) ) );
         lastProjectlink= findLastSavedProject();
+        Parser.designers.clear();
 
     }
 
@@ -168,7 +169,7 @@ public class BehanceGrabber extends Thread {
                             logMessage("Category ended or poor Internet access");
                             break;
                         }
-                        logMessage("End parsing. Total parsed " + Parser.designers.size() + " links");
+                        logMessage("End project. Total parsed " + Parser.designers.size() + " links. try to get pictures");
                         ArrayList<Designer> authors = Parser.designers;
 
                         String tmp ="";
@@ -179,7 +180,8 @@ public class BehanceGrabber extends Thread {
 //                                System.out.println(d.getName());
                                 if(tmp!=""){
                                     iter = authors.indexOf(d);
-                                    break;
+                                    iter++;
+
                                 }
                             }
 
@@ -211,7 +213,7 @@ public class BehanceGrabber extends Thread {
 //        this.main.url.setEditable( false );
         this.main.changeTargetDirectory.setEnabled( true );
         this.main.pruneTargetDirectory.setEnabled( true );
-        logMessage("End "+Parser.designers.size() + " project is parsed.");
+        logMessage("End "+iter + " project is parsed.");
 
     }
 

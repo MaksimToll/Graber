@@ -133,6 +133,7 @@ public class BehanceGrabber extends Thread {
             if(!f.exists())
                 f.mkdir();
         }
+        iter = 0;
 
         parse();
     }

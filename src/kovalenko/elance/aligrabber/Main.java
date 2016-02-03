@@ -532,9 +532,10 @@ public class Main extends javax.swing.JFrame {
         jLabel10.setFont(new java.awt.Font("Dialog", 0, 11)); // NOI18N
         jLabel10.setHorizontalAlignment(javax.swing.SwingConstants.TRAILING);
         jLabel10.setText("Number of projects for parsing :");
-
+        jLabel10.setVisible(false);
         projectLimit.setFont(new java.awt.Font("Dialog", 0, 11)); // NOI18N
         projectLimit.setModel(new javax.swing.SpinnerNumberModel(46, 12, 1200, 12));
+        projectLimit.setVisible(false);
 
         selectCat.setFont(new java.awt.Font("Dialog", 0, 11));
         selectCat.setMaximumRowCount(20);

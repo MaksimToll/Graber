@@ -148,14 +148,15 @@ public class BehanceGrabber extends Thread {
             grabber.addImage(null, d, true);
         }
     }
+    int countParsedProject = 0;
+    static int iter = 0;
     public void parse() {
 
         logMessage("Begin ");
-        int countParsedProject = 0;
+
         try {
 
                     while (true) {
-
 
                         Parser.getAllDesigner(urlForStart, Parser.categoryNumb);
                         if(countParsedProject == Parser.designers.size()){
@@ -165,8 +166,8 @@ public class BehanceGrabber extends Thread {
                         logMessage("End parsing. Total parsed " + Parser.designers.size() + " links");
                         List<Designer> authors = Parser.designers;
 
-                        for (int i = countParsedProject; i < authors.size() ; i++) {
-                            Designer d = authors.get(i);
+                        for (; iter < authors.size() ; iter++) {
+                            Designer d = authors.get(iter);
                             if (isInterrupted()) {
                                 break;
                             }
@@ -481,6 +482,7 @@ class Parser {
             ex.printStackTrace();
         }
     }
+
 
 
 

@@ -87,7 +87,7 @@ public class BeachnceGraberWrapper extends Thread {
             try {
                 //For windows
                 String location = Parser.definitionLocation(designer);
-                if (location.isEmpty()){
+                if (location.isEmpty()||location==null){
                     location+="default/";
                 }
                 int counter = 1;

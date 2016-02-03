@@ -69,26 +69,31 @@ public class BehanceGrabber extends Thread {
     public static String urlForStart = Parser.BASE;
     public Main main;
     static Properties properties = new Properties();
-
+    String lastProjectlink = "";
     public BehanceGrabber(Main main) {
         this.main = main;
+        Properties sysProperties = System.getProperties();
+        String user = (String) sysProperties.get("user.home");
+        Parser.defaultLocation = user+"/Behance";
         properties.setProperty( "targetDirectory", this.main.targetDirectory.getText() );
         if(properties.getProperty("targetDirectory")!= null && !properties.getProperty("targetDirectory").isEmpty() ){
             Parser.defaultLocation = properties.getProperty("targetDirectory");
         }
+
+
         Parser.categoryString = this.main.selectCat.getSelectedItem().toString();
         Parser.categoryNumb = categoryMap.get(Parser.categoryString);
         urlForStart = (findSavedLink()!=null)? findSavedLink():Parser.BASE;
-        Properties sysProperties = System.getProperties();
-        String user = (String) sysProperties.get("user.home");
-        Parser.defaultLocation = user+"/Behance";
+
+
+
 
         File f=new File(user+"/"+"Behance");
         if(!f.exists())
             f.mkdir();
         this.main.start.setText( "Stop" );
         this.main.start.setIcon( new ImageIcon( this.getClass().getResource( "/kovalenko/elance/aligrabber/resources/cross-button.png" ) ) );
-
+        lastProjectlink= findLastSavedProject();
 
     }
 
@@ -155,18 +160,33 @@ public class BehanceGrabber extends Thread {
         logMessage("Begin ");
 
         try {
-
-                    while (true) {
-
+                    
+                    do {
+                        urlForStart = (findSavedLink()!=null)? findSavedLink():Parser.BASE;
                         Parser.getAllDesigner(urlForStart, Parser.categoryNumb);
                         if(countParsedProject == Parser.designers.size()){
                             logMessage("Category ended or poor Internet access");
                             break;
                         }
                         logMessage("End parsing. Total parsed " + Parser.designers.size() + " links");
-                        List<Designer> authors = Parser.designers;
+                        ArrayList<Designer> authors = Parser.designers;
+
+                        String tmp ="";
+                        if(!lastProjectlink.isEmpty()){
+                            for (Designer d: authors
+                                 ) {
+                                tmp = (lastProjectlink.trim().equals(d.getName().trim()))? d.getName():"";
+//                                System.out.println(d.getName());
+                                if(tmp!=""){
+                                    iter = authors.indexOf(d);
+                                    break;
+                                }
+                            }
+
+                        }
 
                         for (; iter < authors.size() ; iter++) {
+
                             Designer d = authors.get(iter);
                             if (isInterrupted()) {
                                 break;
@@ -179,7 +199,7 @@ public class BehanceGrabber extends Thread {
                         if (isInterrupted()) {
                             break;
                         }
-                    }
+                    }while (true);
 
 
         } catch (IOException e) {
@@ -208,7 +228,7 @@ public class BehanceGrabber extends Thread {
 
                 while ((sCurrentLine = br.readLine()) != null) {
 
-                    resultLink = sCurrentLine;
+                    resultLink =  Parser.getFirstLink(sCurrentLine);
                 }
 
             } catch (IOException e) {
@@ -224,6 +244,38 @@ public class BehanceGrabber extends Thread {
         }
         return resultLink;
     }
+
+    public static  String findLastSavedProject(){
+        String resultLink = "";
+        BufferedReader br=null;
+        File saveState = new File(Parser.defaultLocation+"/"+Parser.categoryString + SAVE_FILE);
+        if(saveState.exists()){
+            try {
+
+                String sCurrentLine;
+
+                br = new BufferedReader(new FileReader(saveState));
+
+                while ((sCurrentLine = br.readLine()) != null) {
+
+                    resultLink =  Parser.getSecontLink(sCurrentLine);
+                }
+
+            } catch (IOException e) {
+                // close connection and do nothing.
+            } finally {
+                try {
+                    if (br != null)br.close();
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            }
+
+        }
+        return resultLink;
+    }
+
+
 
     public  BufferedImage tryLoadImage(String imageUrl) {
         try {
@@ -250,7 +302,7 @@ class Parser {
     final static Logger logger = Logger.getLogger(Parser.class);
     //for creation request
     public static String defaultLocation = System.getProperties().getProperty("user.home")+"/Behance";
-    public static List<Designer> designers = new CopyOnWriteArrayList<>();
+    public static ArrayList<Designer> designers = new ArrayList<>();
     public static final String TS = "/search?ts=";
     public static final String ORDINAL = "&ordinal=";
     public static final String PER_P = "&per_page=";
@@ -426,7 +478,7 @@ class Parser {
             }
 
         }
-        return isExist ? path.toString() + "/" : defaultLocation+"/";
+        return isExist ? path.toString() + "/" : defaultLocation+"/default/";
     }
 
 
@@ -460,6 +512,30 @@ class Parser {
 
 
     }
+
+    public static String getFirstLink(String url){
+        String p ="\\s*(\\S+)";
+        Pattern pattern = Pattern.compile(p);
+        Matcher matcher = pattern.matcher(url);
+        if (matcher.find()) {
+            return matcher.group();
+        }
+
+        return "";
+
+
+    } public static String getSecontLink(String url){
+        String p ="\\s*\\S+\\s*:\\s+(\\S+)";
+        Pattern pattern = Pattern.compile(p);
+        Matcher matcher = pattern.matcher(url);
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+
+        return "";
+
+
+    }
     public static void saveLastLink(Designer designer){
         String location = Parser.definitionLocation(designer);
         File saveState = new File(defaultLocation+"/"+Parser.categoryString + "/" + "save_state.txt");
@@ -474,7 +550,7 @@ class Parser {
             BufferedWriter bw = new BufferedWriter(fw);
 
             String text = designer.getMainUrl();
-            bw.write(text);
+            bw.write(text+ " : " + designer.getName() );
             bw.flush();
 
 

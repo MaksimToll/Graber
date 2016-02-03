@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="AliGrabber">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/AliGrabber.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

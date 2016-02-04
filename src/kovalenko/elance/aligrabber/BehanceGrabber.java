@@ -10,6 +10,7 @@ import org.jsoup.helper.HttpConnection;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import sun.security.krb5.internal.crypto.Des;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -196,7 +197,7 @@ public class BehanceGrabber extends Thread {
                 }
 
                 countParsedProject = Parser.designers.size();
-                if (isInterrupted()) {
+                if (isInterrupted() ||  Parser.isFinish) {
                     break;
                 }
             }while (true);
@@ -321,6 +322,7 @@ class Parser {
     public static int limitOfProject = 250;
     public static String categoryNumb = "108"; // ===>  Advertising
     public static String categoryString = "Advertising";
+    public static boolean isFinish = false;
 
 
     public static void getAllDesigner(String startUrl, String category) throws IOException {
@@ -372,7 +374,7 @@ class Parser {
 
     public static void getProjectLink(String url) {
         Designer designer = new Designer();
-
+        Set<Designer> stringSet = new HashSet<>();
         try {
             Connection con = HttpConnection.connect(url);
             con
@@ -404,15 +406,18 @@ class Parser {
                 designer.setImageUrl(elem.attr("href"));
                 Element name = multiOwnter != null ? multiOwnter : elem2.parent();
                 designer.setName(name.attr("href"));
-                designers.add(designer);
+                stringSet.add(designer);
             }
+            if(!designers.isEmpty() && designers.containsAll(stringSet)) {
+                isFinish  = true;
+            }
+            designers.addAll(stringSet);
+
         } catch (IOException e) {
             saveLastLink(designer);
             logger.error("can`t download link");
             e.printStackTrace();
         }
-
-
     }
 
     /**

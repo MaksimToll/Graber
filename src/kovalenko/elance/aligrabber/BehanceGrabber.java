@@ -137,20 +137,24 @@ public class BehanceGrabber extends Thread {
     }
 
     private void makeAll(Designer d){
-        Set<String> tempsLink = Parser.parseImageLinks(d.getImageUrl(), d);
-        ImageWorder grabber = new ImageWorder(this.main);
-        grabber.setDaemon(true);
+        try {
+            Set<String> tempsLink = Parser.parseImageLinks(d.getImageUrl(), d);
+            ImageWorder grabber = new ImageWorder(this.main);
+            grabber.setDaemon(true);
 
-        if (tempsLink.isEmpty()) {
-            logMessage("Url not parsed " + d.getImageUrl() + "\n");
-        }else {
-            for (String link : tempsLink) {
+            if (tempsLink.isEmpty()) {
+                logMessage("Url not parsed " + d.getImageUrl() + "\n");
+            } else {
+                for (String link : tempsLink) {
 
-                grabber.addImage(tryLoadImage(link), d, false);
+                    grabber.addImage(tryLoadImage(link), d, false);
+                }
             }
-        }
-        if (expectedImages > tempsLink.size()) { //if files in project less than expectedImages size
-            grabber.addImage(null, d, true);
+            if (expectedImages > tempsLink.size()) { //if files in project less than expectedImages size
+                grabber.addImage(null, d, true);
+            }
+        }catch(Exception e){
+            logger.error(e.getMessage());
         }
     }
     int countParsedProject = 0;

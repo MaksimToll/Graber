@@ -57,7 +57,7 @@ public class ImageWorder extends Thread {
                 }
             });
             int height = 0;
-            for(int i = 0; i< images.size(); i =i+3){
+            for(int i = 0; i< images.size(); i =i+imagesInRow){
                maxHeight+=images.get(i).getHeight();
 
             }
@@ -85,6 +85,10 @@ public class ImageWorder extends Thread {
             int rows = (int) Math.ceil((double) this.images.size() / (double) imagesInRow);
             finalHeight = (maxHeight) + spaceSize * rows;
 
+            if(finalHeight<=1 || finalWidth<=1){
+                logger.error("small size  h = "+finalHeight+" witdth = "+ finalHeight);
+                return;
+            }
             BufferedImage finalImage = new BufferedImage(finalWidth, finalHeight, BufferedImage.TYPE_INT_RGB);
             Graphics2D g2d = finalImage.createGraphics();
             g2d.setColor(new Color(backgroundColor));

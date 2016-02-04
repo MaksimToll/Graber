@@ -13,7 +13,6 @@ import org.jsoup.select.Elements;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
-import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.SocketTimeoutException;
@@ -21,8 +20,6 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -48,7 +45,7 @@ public class BehanceGrabber extends Thread {
             "\"118\":\"Sound Design\",\"91\":\"Storyboarding\",\"135\":\"Street Art\",\"95\":\"Textile Design\"," +
             "\"126\":\"Toy Design\",\"97\":\"Typography\",\"132\":\"UI\\/UX\"," +
             "\"120\":\"Visual Effects\",\"102\":\"Web Design\",\"103\":\"Web Development\",\"105\":\"Writing\"}";
-    
+
     public static void fillGategories(){
         String p = "(\\d+)\"\\s*:\\s*\"\\s*(|[a-zA-Z\\s*\\(\\)-]+)\"";
 
@@ -59,9 +56,9 @@ public class BehanceGrabber extends Thread {
             String key =mathces.group(1);
             String category=mathces.group(2);
             categoryMap.put(category, key);
-            
+
         }
-        
+
     }
     public static Map<String, String> categoryMap = new TreeMap<>();
     final static Logger logger = Logger.getLogger(BehanceGrabber.class);
@@ -98,7 +95,7 @@ public class BehanceGrabber extends Thread {
 
     }
 
-    public static final int expectedImages = 8;
+    public static final int expectedImages = 9;
 
     private void logMessage(String message) {
         main.progress.append(message + "\n");
@@ -139,8 +136,8 @@ public class BehanceGrabber extends Thread {
     }
 
     private void makeAll(Designer d){
-        List<String> tempsLink = Parser.parseImageLinks(d.getImageUrl(), d);
-        BeachnceGraberWrapper grabber = new BeachnceGraberWrapper(this.main);
+        Set<String> tempsLink = Parser.parseImageLinks(d.getImageUrl(), d);
+        ImageWorder grabber = new ImageWorder(this.main);
         grabber.setDaemon(true);
 
         if (tempsLink.isEmpty()) {
@@ -162,47 +159,47 @@ public class BehanceGrabber extends Thread {
         logMessage("Begin ");
 
         try {
-                    
-                    do {
-                        urlForStart = (findSavedLink()!=null)? findSavedLink():Parser.BASE;
-                        Parser.getAllDesigner(urlForStart, Parser.categoryNumb);
-                        if(countParsedProject == Parser.designers.size()){
-                            logMessage("Category ended or poor Internet access");
-                            break;
-                        }
-                        logMessage("End project. Total parsed " + Parser.designers.size() + " links. try to get pictures");
-                        ArrayList<Designer> authors = Parser.designers;
 
-                        String tmp ="";
-                        if(!lastProjectlink.isEmpty()){
-                            for (Designer d: authors
-                                 ) {
-                                tmp = (lastProjectlink.trim().equals(d.getName().trim()))? d.getName():"";
+            do {
+                urlForStart = (findSavedLink()!=null)? findSavedLink():Parser.BASE;
+                Parser.getAllDesigner(urlForStart, Parser.categoryNumb);
+                if(countParsedProject == Parser.designers.size()){
+                    logMessage("Category ended or poor Internet access");
+                    break;
+                }
+                logMessage("End project. Total parsed " + Parser.designers.size() + " links. try to get pictures");
+                ArrayList<Designer> authors = Parser.designers;
+
+                String tmp ="";
+                if(!lastProjectlink.isEmpty()){
+                    for (Designer d: authors
+                            ) {
+                        tmp = (lastProjectlink.trim().equals(d.getName().trim()))? d.getName():"";
 //                                System.out.println(d.getName());
-                                if(tmp!=""){
-                                    iter = authors.indexOf(d);
-                                    iter++;
-
-                                }
-                            }
+                        if(tmp!=""){
+                            iter = authors.indexOf(d);
+                            iter++;
 
                         }
+                    }
 
-                        for (; iter < authors.size() ; iter++) {
+                }
 
-                            Designer d = authors.get(iter);
-                            if (isInterrupted()) {
-                                break;
-                            }
-                            makeAll(d);
-                            Parser.saveLastLink(d);
-                        }
+                for (; iter < authors.size() ; iter++) {
 
-                        countParsedProject = Parser.designers.size();
-                        if (isInterrupted()) {
-                            break;
-                        }
-                    }while (true);
+                    Designer d = authors.get(iter);
+                    if (isInterrupted()) {
+                        break;
+                    }
+                    makeAll(d);
+                    Parser.saveLastLink(d);
+                }
+
+                countParsedProject = Parser.designers.size();
+                if (isInterrupted()) {
+                    break;
+                }
+            }while (true);
 
 
         } catch (IOException e) {
@@ -235,11 +232,16 @@ public class BehanceGrabber extends Thread {
                 }
 
             } catch (IOException e) {
+                logMessage(e.getMessage());
                 // close connection and do nothing.
-            } finally {
+            }catch (Exception ex){
+                logger.error(ex.getMessage());
+            }
+            finally {
                 try {
                     if (br != null)br.close();
                 } catch (IOException ex) {
+
                     ex.printStackTrace();
                 }
             }
@@ -290,6 +292,8 @@ public class BehanceGrabber extends Thread {
             logMessage("can`t load image -> " + imageUrl +"\n"+ e.getMessage());
 
 
+        }catch(Exception exeption){
+            logger.error(exeption.getMessage()+" "+imageUrl);
         }
         return null;
     }
@@ -417,9 +421,9 @@ class Parser {
      *
      * @throws IOException
      */
-    public static List<String> parseImageLinks(String url, Designer author) {
+    public static Set<String> parseImageLinks(String url, Designer author) {
 
-        List<String> links = new ArrayList<>();
+        Set<String> links = new HashSet<>();
         try {
             Connection con = HttpConnection.connect(url);
 
@@ -446,7 +450,10 @@ class Parser {
                 String link = mathces.group().replaceAll("\\\\", "");
 
                 if (link.contains("disp")) {//TODO change it. Better way to chose link
-                    links.add(link.replaceAll("src\":\"", "").replaceAll("\"", ""));
+                    if(!links.contains(link.replaceAll("src\":\"", "").replaceAll("\"", ""))){
+                        links.add(link.replaceAll("src\":\"", "").replaceAll("\"", ""));
+                    }
+
                 }
 
             }

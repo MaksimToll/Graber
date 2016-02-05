@@ -10,7 +10,6 @@ import org.jsoup.helper.HttpConnection;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import sun.security.krb5.internal.crypto.Des;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -110,36 +109,40 @@ public class BehanceGrabber extends Thread {
 
     public void run() {
 
+        try {
+            properties.setProperty("spaceSize", this.main.spaceBetweenImages.getValue().toString());
+            properties.setProperty("imagesInRow", this.main.imagesInRow.getValue().toString());
+            properties.setProperty("targetDirectory", this.main.targetDirectory.getText());
+            properties.setProperty("backgroundColor", "" + this.main.backgroundColor.getBackground().getRGB());
+            properties.setProperty("extractImagesFromDetails", this.main.extractImagesFromDetails.isSelected() ? "Y" : "N");
+            properties.setProperty("ignoreImages", this.main.ignoreImages.isSelected() ? "Y" : "N");
+            properties.setProperty("ignoreImagesWidth", this.main.ignoreImagesWidth.getValue().toString());
+            properties.setProperty("ignoreImagesHeight", this.main.ignoreImagesWidth.getValue().toString());
 
-        properties.setProperty( "spaceSize", this.main.spaceBetweenImages.getValue().toString() );
-        properties.setProperty( "imagesInRow", this.main.imagesInRow.getValue().toString() );
-        properties.setProperty( "targetDirectory", this.main.targetDirectory.getText() );
-        properties.setProperty( "backgroundColor", "" + this.main.backgroundColor.getBackground().getRGB() );
-        properties.setProperty( "extractImagesFromDetails", this.main.extractImagesFromDetails.isSelected() ? "Y" : "N" );
-        properties.setProperty( "ignoreImages", this.main.ignoreImages.isSelected() ? "Y" : "N" );
-        properties.setProperty( "ignoreImagesWidth", this.main.ignoreImagesWidth.getValue().toString() );
-        properties.setProperty( "ignoreImagesHeight", this.main.ignoreImagesWidth.getValue().toString() );
+            if (properties.getProperty("targetDirectory") != null && !properties.getProperty("targetDirectory").isEmpty()) {
+                Parser.defaultLocation = properties.getProperty("targetDirectory");
+            } else {
+                Properties sysProperties = System.getProperties();
+                String user = (String) sysProperties.get("user.home");
+                Parser.defaultLocation = user + "/Behance";
 
-        if(properties.getProperty("targetDirectory")!= null && !properties.getProperty("targetDirectory").isEmpty() ){
-            Parser.defaultLocation = properties.getProperty("targetDirectory");
-        }else{
-            Properties sysProperties = System.getProperties();
-            String user = (String) sysProperties.get("user.home");
-            Parser.defaultLocation = user+"/Behance";
+                File f = new File(user + "/" + "Behance");
+                if (!f.exists())
+                    f.mkdir();
+            }
+            iter = 0;
 
-            File f=new File(user+"/"+"Behance");
-            if(!f.exists())
-                f.mkdir();
+            parse();
+        } catch (Exception e){
+            logger.error(e.getMessage(), e);
+            JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
-        iter = 0;
-
-        parse();
     }
 
     private void makeAll(Designer d){
         try {
             Set<String> tempsLink = Parser.parseImageLinks(d.getImageUrl(), d);
-            ImageWorder grabber = new ImageWorder(this.main);
+            ImageWorker grabber = new ImageWorker(this.main);
             grabber.setDaemon(true);
 
             if (tempsLink.isEmpty()) {
@@ -520,11 +523,11 @@ class Parser {
 
 
     public static String getNameFromLink(String url){
-        String p ="[\\/]([A-Za-z1-9_]+)$";
-        Pattern pattern = Pattern.compile(p);
+        String p =".*/([\\S]+)$";
+        Pattern pattern = Pattern.compile(".*\\/([\\S]+)$");
         Matcher matcher = pattern.matcher(url);
         if (matcher.find()) {
-            return matcher.group();
+            return matcher.group(1);
         }
 
         return "";

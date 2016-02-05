@@ -12,11 +12,11 @@ import java.util.*;
 /**
  * Created by mtol on 01.02.2016.
  */
-public class ImageWorder extends Thread {
-    final static Logger logger = Logger.getLogger(ImageWorder.class);
+public class ImageWorker extends Thread {
+    final static Logger logger = Logger.getLogger(ImageWorker.class);
     private static Main main;
     BehanceGrabber thread;
-    public ImageWorder(Main main){
+    public ImageWorker(Main main){
         this.main = main;
     }
     @Override
@@ -58,7 +58,7 @@ public class ImageWorder extends Thread {
             });
             int height = 0;
             for(int i = 0; i< images.size(); i =i+imagesInRow){
-               maxHeight+=images.get(i).getHeight();
+                maxHeight+=images.get(i).getHeight();
 
             }
 
@@ -124,11 +124,13 @@ public class ImageWorder extends Thread {
                 //For windows
                 String location = Parser.definitionLocation(designer);
                 if (Parser.getNameFromLink(designer.getName()).isEmpty()||Parser.getNameFromLink(designer.getName())==null){
-                    location+="default/";
-                    File file = new File( location);
-                    if(!file.exists()){
-                        file.mkdir();
-                    }
+//                    location+="default/";
+//                    File file = new File( location);
+//                    if(!file.exists()){
+//                        file.mkdir();
+//                    }
+                    logger.error("can`t parse the link name "+ designer.getName());
+                    return;
                 }
                 int counter = 1;
                 File imageFile = new File(location + Parser.getNameFromLink(designer.getName())+"_" + counter+ ".jpg"); // for windows

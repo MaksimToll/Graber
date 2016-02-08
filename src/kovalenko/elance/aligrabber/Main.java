@@ -696,9 +696,7 @@ public class Main extends javax.swing.JFrame {
         this.prefs.putInt( Main.PREFS_FRAME_WIDTH, this.getWidth() );
         this.prefs.putInt( Main.PREFS_FRAME_HEIGHT, this.getHeight() );
         // Save settings.
-//        this.prefs.put( Main.PREFS_LAST_URL, this.url.getText().trim() );
         this.prefs.put( Main.PREFS_TARGET_DIRECTORY, this.targetDirectory.getText() );
-//        this.prefs.putBoolean( Main.PREFS_USE_PROXY_SERVER, this.useProxyServer.isSelected() );
         this.prefs.put( Main.PREFS_PROXY_SERVER, this.proxyServer.getText() );
         this.prefs.putInt( Main.PREFS_MAX_ACTIVE_THREADS, Integer.parseInt( this.countProjectForParsing.getValue().toString() ) );
         this.prefs.putInt( Main.PREFS_DOWNLOAD_ATTEMPTS, Integer.parseInt( this.projectLimit.getValue().toString() ) );
@@ -731,9 +729,6 @@ public class Main extends javax.swing.JFrame {
         this.confirmQuit();
     }//GEN-LAST:event_formWindowClosing
 
-    private void useProxyServerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_useProxyServerActionPerformed
-//        this.proxyServer.setEditable( this.useProxyServer.isSelected() );
-    }//GEN-LAST:event_useProxyServerActionPerformed
 
     private void startActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_startActionPerformed
         if ( "Start".equals( evt.getActionCommand() ) ) {
@@ -741,14 +736,12 @@ public class Main extends javax.swing.JFrame {
                 // Start a grabber thread.
                 this.changeTargetDirectory.setEnabled( false );
                 this.pruneTargetDirectory.setEnabled( false );
-//                this.prefs.put( Main.PREFS_LAST_URL, this.url.getText().trim() );
-//                this.grabber = new Grabber( this, this.url.getText().trim() );
+
                 state.setText("working...");
                 this.grabber = new BehanceGrabber(this);
                 grabber.setDaemon(true);
                 this.grabber.start();
-//                BehanceGrabber.parse(this);
-//                this.grabber.start();
+
             }
         } else if ( "Stop".equals( evt.getActionCommand() ) ) {
             if ( JOptionPane.showConfirmDialog( this.getRootPane(), "The download is in progress! Are you sure you want to stop?", "Warning", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE ) == JOptionPane.OK_OPTION ) {

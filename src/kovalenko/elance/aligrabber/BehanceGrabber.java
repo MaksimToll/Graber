@@ -321,12 +321,12 @@ class Parser {
     public static final String TS = "/search?ts=";
     public static final String ORDINAL = "&ordinal=";
     public static final String PER_P = "&per_page=";
-    public static final String LAST_PART = "&content=projects&sort=featured_date&time=all&location_id=";
+    public static final String LAST_PART = "&content=projects&sort=appreciations&time=all&location_id=";
     public static final String CATEGORY = "&field=";
     //
     public static final String BASE = "https://www.behance.net";
     public static final int PER_PAGE = 12;
-    public static int limitOfProject = 250;
+    public static int limitOfProject = 180;
     public static String categoryNumb = "108"; // ===>  Advertising
     public static String categoryString = "Advertising";
     public static boolean isFinish = false;

@@ -123,23 +123,20 @@ public class ImageWorker extends Thread {
             try {
                 //For windows
                 String location = Parser.definitionLocation(designer);
-                if (Parser.getNameFromLink(designer.getName()).isEmpty()||Parser.getNameFromLink(designer.getName())==null){
-//                    location+="default/";
-//                    File file = new File( location);
-//                    if(!file.exists()){
-//                        file.mkdir();
-//                    }
+                String nameFromLink = Parser.getNameFromLink(designer.getName());
+                if (nameFromLink.isEmpty()||nameFromLink==null){
+
                     logger.error("can`t parse the link name "+ designer.getName());
                     return;
                 }
                 int counter = 1;
-                File imageFile = new File(location + Parser.getNameFromLink(designer.getName())+"_" + counter+ ".jpg"); // for windows
+                File imageFile = new File(location + nameFromLink+"_" + counter+ ".jpg"); // for windows
 //                File imageFile = new File(Parser.definitionLocation(designer) + designer.getName().replaceAll("\\/", "_") + ".jpg"); // for linux
 //                File imageFile = new File(location + designer.getName() + ".jpg"); // for Mac
                 if (imageFile.isFile()) {
 
                     do {
-                        imageFile = new File(location + Parser.getNameFromLink(designer.getName()) + "_"  + ++counter + ".jpg"); // for windows
+                        imageFile = new File(location + nameFromLink + "_"  + ++counter + ".jpg"); // for windows
 //                        imageFile = new File(location + designer.getName() + ++counter + ".jpg"); // for mac
 //                        imageFile = new File(Parser.definitionLocation(designer) + designer.getName().replaceAll("\\/", "_") + "_" + ++counter + ".jpg"); for linux
 

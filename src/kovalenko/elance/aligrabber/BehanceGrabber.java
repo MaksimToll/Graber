@@ -130,7 +130,6 @@ public class BehanceGrabber extends Thread {
                 if (!f.exists())
                     f.mkdir();
             }
-            iter = 0;
 
             parse();
         } catch (Exception e){
@@ -139,7 +138,7 @@ public class BehanceGrabber extends Thread {
         }
     }
 
-    private void makeAll(Designer d){
+    private void createImages(Designer d){
         try {
             Set<String> tempsLink = Parser.parseImageLinks(d.getImageUrl(), d);
             ImageWorker grabber = new ImageWorker(this.main);
@@ -161,7 +160,7 @@ public class BehanceGrabber extends Thread {
         }
     }
     int countParsedProject = 0;
-    static int iter = 0;
+
     public void parse() {
 
         logMessage("Begin ");
@@ -171,27 +170,12 @@ public class BehanceGrabber extends Thread {
             do {
                 urlForStart = (findSavedLink()!=null)? findSavedLink():Parser.BASE;
                 Parser.getAllDesigner(urlForStart, Parser.categoryNumb);
-                if(countParsedProject == Parser.designers.size()){
-                    logMessage("Category ended or poor Internet access");
-                    break;
-                }
-                logMessage("End project. Total parsed " + Parser.designers.size() + " links. try to get pictures");
+
+                logMessage("End iteration . Total parsed " + Parser.designers.size() + " links. try to get pictures");
                 ArrayList<Designer> authors = Parser.designers;
+                lastProjectlink= findLastSavedProject();
+                int iter = tryGetIterator(authors);
 
-                String tmp ="";
-                if(!lastProjectlink.isEmpty()){
-                    for (Designer d: authors
-                            ) {
-                        tmp = (lastProjectlink.trim().equals(d.getName().trim()))? d.getName():"";
-//                                System.out.println(d.getName());
-                        if(tmp!=""){
-                            iter = authors.indexOf(d);
-                            iter++;
-
-                        }
-                    }
-
-                }
 
                 for (; iter < authors.size() ; iter++) {
 
@@ -199,7 +183,7 @@ public class BehanceGrabber extends Thread {
                     if (isInterrupted()) {
                         break;
                     }
-                    makeAll(d);
+                    createImages(d);
                     Parser.saveLastLink(d);
                 }
 
@@ -207,6 +191,8 @@ public class BehanceGrabber extends Thread {
                 if (isInterrupted() ||  Parser.isFinish) {
                     break;
                 }
+                Parser.designers.clear();
+
             }while (true);
 
 
@@ -219,8 +205,28 @@ public class BehanceGrabber extends Thread {
 //        this.main.url.setEditable( false );
         this.main.changeTargetDirectory.setEnabled( true );
         this.main.pruneTargetDirectory.setEnabled( true );
-        logMessage("End "+iter + " project is parsed.");
+        logMessage("Stop  parsing.");
 
+    }
+
+    private int tryGetIterator(List<Designer> projects ){
+        int iter = 0;
+        String tmp = "";
+
+        if(!lastProjectlink.isEmpty()){
+            for (Designer d: projects
+                    ) {
+                tmp = (lastProjectlink.trim().equals(d.getName().trim()))? d.getName():"";
+//                                System.out.println(d.getName());
+                if(tmp!=""){
+                    iter = projects.indexOf(d);
+                    iter++;
+
+                }
+            }
+
+        }
+        return iter;
     }
 
     private String findSavedLink(){
@@ -271,7 +277,7 @@ public class BehanceGrabber extends Thread {
 
                 while ((sCurrentLine = br.readLine()) != null) {
 
-                    resultLink =  Parser.getSecontLink(sCurrentLine);
+                    resultLink =  Parser.getSecondLink(sCurrentLine);
                 }
 
             } catch (IOException e) {
@@ -326,7 +332,7 @@ class Parser {
     //
     public static final String BASE = "https://www.behance.net";
     public static final int PER_PAGE = 12;
-    public static int limitOfProject = 180;
+    public static int limitOfProject = 24;
     public static String categoryNumb = "108"; // ===>  Advertising
     public static String categoryString = "Advertising";
     public static boolean isFinish = false;
@@ -352,9 +358,6 @@ class Parser {
             url = BASE + TS + timestamp + ORDINAL + ordinal + PER_P + PER_PAGE +CATEGORY+category+ LAST_PART;
             getProjectLink(url); // return links on projects and fiel designers
         }
-        Designer des = new Designer(); //TODO change signature saveLastLink
-        des.setMainUrl(url);
-
 
     }
 
@@ -546,7 +549,7 @@ class Parser {
         return "";
 
 
-    } public static String getSecontLink(String url){
+    } public static String getSecondLink(String url){
         String p ="\\s*\\S+\\s*:\\s+(\\S+)";
         Pattern pattern = Pattern.compile(p);
         Matcher matcher = pattern.matcher(url);

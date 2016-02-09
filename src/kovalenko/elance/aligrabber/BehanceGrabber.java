@@ -28,6 +28,7 @@ import java.util.regex.Pattern;
  */
 public class BehanceGrabber extends Thread {
 
+    public static final int expectedImages = 9;
     static final String category = "{\"108\":\"Advertising\",\"3\":\"Animation\",\"4\":\"Architecture\"," +
             "\"5\":\"Art Direction\",\"130\":\"Automotive Design\",\"109\":\"Branding\",\"133\":\"Calligraphy\"," +
             "\"9\":\"Cartooning\",\"124\":\"Character Design\",\"12\":\"Cinematography\",\"15\":\"Computer Animation\"" +
@@ -45,66 +46,91 @@ public class BehanceGrabber extends Thread {
             "\"118\":\"Sound Design\",\"91\":\"Storyboarding\",\"135\":\"Street Art\",\"95\":\"Textile Design\"," +
             "\"126\":\"Toy Design\",\"97\":\"Typography\",\"132\":\"UI\\/UX\"," +
             "\"120\":\"Visual Effects\",\"102\":\"Web Design\",\"103\":\"Web Development\",\"105\":\"Writing\"}";
-
-    public static void fillGategories(){
-        String p = "(\\d+)\"\\s*:\\s*\"\\s*(|[a-zA-Z\\s*\\(\\)-]+)\"";
-
-        Pattern pattern = Pattern.compile(p);
-        Matcher mathces = pattern.matcher(category);
-        kovalenko.elance.aligrabber.Category temp;
-        while (mathces.find()) {
-            String key =mathces.group(1);
-            String category=mathces.group(2);
-            categoryMap.put(category, key);
-
-        }
-
-    }
-    public static Map<String, String> categoryMap = new TreeMap<>();
     final static Logger logger = Logger.getLogger(BehanceGrabber.class);
     final static String SAVE_FILE = "/" + "save_state.txt";
+    public static Map<String, String> categoryMap = new TreeMap<>();
     public static String urlForStart = Parser.BASE;
-    public Main main;
     static Properties properties = new Properties();
+    public Main main;
     String lastProjectlink = "";
+    int countParsedProject = 0;
+
     public BehanceGrabber(Main main) {
         this.main = main;
         Properties sysProperties = System.getProperties();
         String user = (String) sysProperties.get("user.home");
-        Parser.defaultLocation = user+"/Behance";
-        properties.setProperty( "targetDirectory", this.main.targetDirectory.getText() );
-        if(properties.getProperty("targetDirectory")!= null && !properties.getProperty("targetDirectory").isEmpty() ){
+        Parser.defaultLocation = user + "/Behance";
+        properties.setProperty("targetDirectory", this.main.targetDirectory.getText());
+        if (properties.getProperty("targetDirectory") != null && !properties.getProperty("targetDirectory").isEmpty()) {
             Parser.defaultLocation = properties.getProperty("targetDirectory");
         }
 
 
         Parser.categoryString = this.main.selectCat.getSelectedItem().toString();
         Parser.categoryNumb = categoryMap.get(Parser.categoryString);
-        urlForStart = (findSavedLink()!=null)? findSavedLink():Parser.BASE;
+        urlForStart = (findSavedLink() != null) ? findSavedLink() : Parser.BASE;
 
 
-
-
-        File f=new File(user+"/"+"Behance");
-        if(!f.exists())
+        File f = new File(user + "/" + "Behance");
+        if (!f.exists())
             f.mkdir();
-        this.main.start.setText( "Stop" );
-        this.main.start.setIcon( new ImageIcon( this.getClass().getResource( "/kovalenko/elance/aligrabber/resources/cross-button.png" ) ) );
-        lastProjectlink= findLastSavedProject();
+        this.main.start.setText("Stop");
+        this.main.start.setIcon(new ImageIcon(this.getClass().getResource("/kovalenko/elance/aligrabber/resources/cross-button.png")));
+        lastProjectlink = findLastSavedProject();
         Parser.designers.clear();
 
     }
 
-    public static final int expectedImages = 9;
+    public static void fillGategories() {
+        String p = "(\\d+)\"\\s*:\\s*\"\\s*(|[a-zA-Z\\s*\\(\\)-]+)\"";
+
+        Pattern pattern = Pattern.compile(p);
+        Matcher mathces = pattern.matcher(category);
+        kovalenko.elance.aligrabber.Category temp;
+        while (mathces.find()) {
+            String key = mathces.group(1);
+            String category = mathces.group(2);
+            categoryMap.put(category, key);
+
+        }
+
+    }
+
+    public static void logMessage(Main main, String message, Logger log) {
+        main.progress.append(message + "\n");
+        log.debug(message);
+    }
+
+    public static String findLastSavedProject() {
+        String resultLink = "";
+        BufferedReader br = null;
+        File saveState = new File(Parser.defaultLocation + "/" + Parser.categoryString + SAVE_FILE);
+        if (saveState.exists()) {
+            try {
+                String sCurrentLine;
+                br = new BufferedReader(new FileReader(saveState));
+                while ((sCurrentLine = br.readLine()) != null) {
+
+                    resultLink = Parser.getSecondLink(sCurrentLine);
+                }
+            } catch (IOException e) {
+                // close connection and do nothing.
+                logger.error("can`t load last saved ");
+            } finally {
+                try {
+                    if (br != null) br.close();
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            }
+
+        }
+        return resultLink;
+    }
 
     private void logMessage(String message) {
         main.progress.append(message + "\n");
         logger.debug(message);
-    }
-
-    public  static  void logMessage(Main main,String message, Logger log){
-        main.progress.append(message + "\n");
-        log.debug(message);
     }
 
     public void run() {
@@ -132,18 +158,16 @@ public class BehanceGrabber extends Thread {
             }
 
             parse();
-        } catch (Exception e){
+        } catch (Exception e) {
             logger.error(e.getMessage(), e);
             JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    private void createImages(Designer d){
+    private void createImages(Designer d) {
         try {
             Set<String> tempsLink = Parser.parseImageLinks(d.getImageUrl(), d);
             ImageWorker grabber = new ImageWorker(this.main);
-            grabber.setDaemon(true);
-
             if (tempsLink.isEmpty()) {
                 logMessage("Url not parsed " + d.getImageUrl() + "\n");
             } else {
@@ -155,11 +179,10 @@ public class BehanceGrabber extends Thread {
             if (expectedImages > tempsLink.size()) { //if files in project less than expectedImages size
                 grabber.addImage(null, d, true);
             }
-        }catch(Exception e){
+        } catch (Exception e) {
             logger.error(e.getMessage());
         }
     }
-    int countParsedProject = 0;
 
     public void parse() {
 
@@ -168,16 +191,16 @@ public class BehanceGrabber extends Thread {
         try {
 
             do {
-                urlForStart = (findSavedLink()!=null)? findSavedLink():Parser.BASE;
+                urlForStart = (findSavedLink() != null) ? findSavedLink() : Parser.BASE;
                 Parser.getAllDesigner(urlForStart, Parser.categoryNumb);
 
                 logMessage("End iteration . Total parsed " + Parser.designers.size() + " links. try to get pictures");
                 ArrayList<Designer> authors = Parser.designers;
-                lastProjectlink= findLastSavedProject();
+                lastProjectlink = findLastSavedProject();
                 int iter = tryGetIterator(authors);
 
 
-                for (; iter < authors.size() ; iter++) {
+                for (; iter < authors.size(); iter++) {
 
                     Designer d = authors.get(iter);
                     if (isInterrupted()) {
@@ -188,37 +211,35 @@ public class BehanceGrabber extends Thread {
                 }
 
                 countParsedProject = Parser.designers.size();
-                if (isInterrupted() ||  Parser.isFinish) {
+                if (isInterrupted() || Parser.isFinish) {
                     break;
                 }
                 Parser.designers.clear();
 
-            }while (true);
-
+            } while (true);
 
         } catch (IOException e) {
             logMessage(e.getMessage());
             e.printStackTrace();
         }
-        this.main.start.setText( "Start" );
-        this.main.start.setIcon( new ImageIcon( this.getClass().getResource( "/kovalenko/elance/aligrabber/resources/tick-button.png" ) ) );
-//        this.main.url.setEditable( false );
-        this.main.changeTargetDirectory.setEnabled( true );
-        this.main.pruneTargetDirectory.setEnabled( true );
+        this.main.start.setText("Start");
+        this.main.start.setIcon(new ImageIcon(this.getClass().getResource("/kovalenko/elance/aligrabber/resources/tick-button.png")));
+        this.main.changeTargetDirectory.setEnabled(true);
+        this.main.pruneTargetDirectory.setEnabled(true);
         logMessage("Stop  parsing.");
 
     }
 
-    private int tryGetIterator(List<Designer> projects ){
+    private int tryGetIterator(List<Designer> projects) {
         int iter = 0;
         String tmp = "";
 
-        if(!lastProjectlink.isEmpty()){
-            for (Designer d: projects
+        if (!lastProjectlink.isEmpty()) {
+            for (Designer d : projects
                     ) {
-                tmp = (lastProjectlink.trim().equals(d.getName().trim()))? d.getName():"";
+                tmp = (lastProjectlink.trim().equals(d.getName().trim())) ? d.getName() : "";
 //                                System.out.println(d.getName());
-                if(tmp!=""){
+                if (tmp != "") {
                     iter = projects.indexOf(d);
                     iter++;
 
@@ -229,63 +250,29 @@ public class BehanceGrabber extends Thread {
         return iter;
     }
 
-    private String findSavedLink(){
+    private String findSavedLink() {
         String resultLink = null;
-        BufferedReader br=null;
-        File saveState = new File(Parser.defaultLocation+"/"+Parser.categoryString + SAVE_FILE);
-        if(saveState.exists()){
+        BufferedReader br = null;
+        File saveState = new File(Parser.defaultLocation + "/" + Parser.categoryString + SAVE_FILE);
+        if (saveState.exists()) {
             try {
 
                 String sCurrentLine;
-
                 br = new BufferedReader(new FileReader(saveState));
-
                 while ((sCurrentLine = br.readLine()) != null) {
-
-                    resultLink =  Parser.getFirstLink(sCurrentLine);
+                    resultLink = Parser.getFirstLink(sCurrentLine);
                 }
 
             } catch (IOException e) {
-                logMessage(e.getMessage());
+                logMessage("Can`t load last saved order " + e.getMessage());
                 // close connection and do nothing.
-            }catch (Exception ex){
+            } catch (Exception ex) {
                 logger.error(ex.getMessage());
-            }
-            finally {
-                try {
-                    if (br != null)br.close();
-                } catch (IOException ex) {
-
-                    ex.printStackTrace();
-                }
-            }
-
-        }
-        return resultLink;
-    }
-
-    public static  String findLastSavedProject(){
-        String resultLink = "";
-        BufferedReader br=null;
-        File saveState = new File(Parser.defaultLocation+"/"+Parser.categoryString + SAVE_FILE);
-        if(saveState.exists()){
-            try {
-
-                String sCurrentLine;
-
-                br = new BufferedReader(new FileReader(saveState));
-
-                while ((sCurrentLine = br.readLine()) != null) {
-
-                    resultLink =  Parser.getSecondLink(sCurrentLine);
-                }
-
-            } catch (IOException e) {
-                // close connection and do nothing.
             } finally {
                 try {
-                    if (br != null)br.close();
+                    if (br != null) br.close();
                 } catch (IOException ex) {
+
                     ex.printStackTrace();
                 }
             }
@@ -294,36 +281,27 @@ public class BehanceGrabber extends Thread {
         return resultLink;
     }
 
-
-
-    public  BufferedImage tryLoadImage(String imageUrl) {
+    public BufferedImage tryLoadImage(String imageUrl) {
         try {
             URL url = new URL(imageUrl);
             InputStream in = url.openStream();
             BufferedImage image = ImageIO.read(in);
             return image;
         } catch (IOException e) {
-            logMessage("can`t load image -> " + imageUrl +"\n"+ e.getMessage());
+            logMessage("can`t load image -> " + imageUrl + "\n error message --> " + e.getMessage());
 
 
-        }catch(Exception exeption){
-            logger.error(exeption.getMessage()+" "+imageUrl);
+        } catch (Exception exception) {
+            logger.error(exception.getMessage() + " " + imageUrl);
         }
         return null;
     }
-
-
-
 
 
 }
 
 class Parser {
 
-    final static Logger logger = Logger.getLogger(Parser.class);
-    //for creation request
-    public static String defaultLocation = System.getProperties().getProperty("user.home")+"/Behance";
-    public static ArrayList<Designer> designers = new ArrayList<>();
     public static final String TS = "/search?ts=";
     public static final String ORDINAL = "&ordinal=";
     public static final String PER_P = "&per_page=";
@@ -332,50 +310,69 @@ class Parser {
     //
     public static final String BASE = "https://www.behance.net";
     public static final int PER_PAGE = 12;
+    public static final int TIMAUT = 6000;
+    final static Logger logger = Logger.getLogger(Parser.class);
+    //for creation request
+    public static String defaultLocation = System.getProperties().getProperty("user.home") + "/Behance";
+    public static ArrayList<Designer> designers = new ArrayList<>();
     public static int limitOfProject = 24;
     public static String categoryNumb = "108"; // ===>  Advertising
     public static String categoryString = "Advertising";
     public static boolean isFinish = false;
 
-
     public static void getAllDesigner(String startUrl, String category) throws IOException {
         int ordinal = 0;
-        if(startUrl.contains(ORDINAL)){
+        if (startUrl.contains(ORDINAL)) {
             Pattern pattern = Pattern.compile("ordinal=(\\d+)");
             Matcher matcher = pattern.matcher(startUrl);
             if (matcher.find()) {
-                ordinal =Integer.parseInt(matcher.group(1)) ;
+                ordinal = Integer.parseInt(matcher.group(1));
             }
         }
 
-        if(category == null){
-            category="";
+        if (category == null) {
+            category = "";
         }
         String timestamp = Parser.getTimestamp(startUrl);
         String url = "";
         int from = ordinal;
-        for ( ; ordinal < from+limitOfProject; ordinal += PER_PAGE) { // TODO change it to more logical value, ONLY for test
-            url = BASE + TS + timestamp + ORDINAL + ordinal + PER_P + PER_PAGE +CATEGORY+category+ LAST_PART;
+        for (; ordinal < from + limitOfProject; ordinal += PER_PAGE) { // TODO change it to more logical value, ONLY for test
+            url = BASE + TS + timestamp + ORDINAL + ordinal + PER_P + PER_PAGE + CATEGORY + category + LAST_PART;
             getProjectLink(url); // return links on projects and fiel designers
         }
 
     }
 
+    public static Connection.Response getResponseFromUrl(String url, int timeout) {
+        try {
+            Connection con = HttpConnection.connect(url);
+            con
+                    .method(Connection.Method.GET)
+                    .header("Accept", "application/json")
+                    .header("Accept-Encoding", "gzip, deflate")
+                    .header("Accept-Language", "en-US,en;q=0.5")
+                    .header("Host", "www.behance.net")
+                    .header("User-Agent", "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:43.0) Gecko/20100101 Firefox/43.0")
+                    .header("X-Requested-With", "XMLHttpRequest").timeout(timeout)
+                    .ignoreContentType(true);
 
+
+            Connection.Response resp = con.execute();
+
+            return resp;
+        } catch (SocketTimeoutException ex) {
+            logger.error("can`t conection to link" + url + "  " + ex.getMessage());
+
+        } catch (IOException e) {
+            logger.error(e.getMessage());
+        }
+        return null;
+
+    }
 
     public static String getTimestamp(String url) throws IOException {
-        Connection con = HttpConnection.connect(url);
-        con
-                .method(Connection.Method.GET)
-                .header("Accept", "application/json")
-                .header("Accept-Encoding", "gzip, deflate")
-                .header("Accept-Language", "en-US,en;q=0.5")
-                .header("Host", "www.behance.net")
-                .header("User-Agent", "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:43.0) Gecko/20100101 Firefox/43.0")
-                .header("X-Requested-With", "XMLHttpRequest")
-                .ignoreContentType(true);
 
-        Connection.Response resp = con.execute();
+        Connection.Response resp = getResponseFromUrl(url, TIMAUT);
 
         Gson gson = new Gson();
         Data data = gson.fromJson(resp.body(), Data.class);
@@ -386,21 +383,8 @@ class Parser {
         Designer designer = new Designer();
         Set<Designer> stringSet = new HashSet<>();
         try {
-            Connection con = HttpConnection.connect(url);
-            con
-                    .method(Connection.Method.GET)
-                    .header("Accept", "application/json")
-                    .header("Accept-Encoding", "gzip, deflate")
-                    .header("Accept-Language", "en-US,en;q=0.5")
-                    .header("Host", "www.behance.net")
-                    .header("User-Agent", "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:43.0) Gecko/20100101 Firefox/43.0")
-                    .header("X-Requested-With", "XMLHttpRequest")
-                    .ignoreContentType(true);
 
-            Connection.Response resp = null;
-
-            resp = con.execute();
-
+            Connection.Response resp = getResponseFromUrl(url, TIMAUT);
 
             Gson gson = new Gson();
             Data data = gson.fromJson(resp.body(), Data.class);
@@ -418,15 +402,15 @@ class Parser {
                 designer.setName(name.attr("href"));
                 stringSet.add(designer);
             }
-            if(!designers.isEmpty() && designers.containsAll(stringSet)) {
-                isFinish  = true;
+            if (!designers.isEmpty() && designers.containsAll(stringSet)) {
+                isFinish = true;
             }
             designers.addAll(stringSet);
 
-        } catch (IOException e) {
+        } catch (Exception e) {
             saveLastLink(designer);
-            logger.error("can`t download link");
-            e.printStackTrace();
+            logger.error("can`t download link" + e.getMessage());
+
         }
     }
 
@@ -440,20 +424,9 @@ class Parser {
 
         Set<String> links = new HashSet<>();
         try {
-            Connection con = HttpConnection.connect(url);
 
 
-            con
-                    .method(Connection.Method.GET)
-                    .header("Accept", "application/json")
-                    .header("Accept-Encoding", "gzip, deflate")
-                    .header("Accept-Language", "en-US,en;q=0.5")
-                    .header("Host", "www.behance.net")
-                    .header("User-Agent", "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:43.0) Gecko/20100101 Firefox/43.0")
-                    .header("X-Requested-With", "XMLHttpRequest").timeout(6000)
-                    .ignoreContentType(true);
-
-            Connection.Response resp = con.execute();
+            Connection.Response resp = getResponseFromUrl(url, TIMAUT);
 
             String country = parseLocation(resp.body());
             author.setCountry(country);
@@ -465,7 +438,7 @@ class Parser {
                 String link = mathces.group().replaceAll("\\\\", "");
 
                 if (link.contains("disp")) {//TODO change it. Better way to chose link
-                    if(!links.contains(link.replaceAll("src\":\"", "").replaceAll("\"", ""))){
+                    if (!links.contains(link.replaceAll("src\":\"", "").replaceAll("\"", ""))) {
                         links.add(link.replaceAll("src\":\"", "").replaceAll("\"", ""));
                     }
 
@@ -475,12 +448,8 @@ class Parser {
             logger.debug("Images Link is parsed = " + links.size());
 
             return links;
-        } catch (SocketTimeoutException ex) {
-            logger.error("can`t conection to link"+url+"  "+ex.getMessage());
-            return links;
-
-        } catch (IOException e) {
-            logger.error(e.getMessage());
+        } catch (Exception ex) {
+            logger.error(" Can`t parse link.", ex);
             return links;
         }
 
@@ -488,7 +457,7 @@ class Parser {
 
     public static String definitionLocation(Designer author) { // rewrite it
 
-        File dir = new File(defaultLocation+"/"+categoryString + "/" + author.getCountry());
+        File dir = new File(defaultLocation + "/" + categoryString + "/" + author.getCountry());
         Path path = dir.toPath();
         boolean isExist = false;
         if (Files.exists(path)) {
@@ -503,7 +472,7 @@ class Parser {
             }
 
         }
-        return isExist ? path.toString() + "/" : defaultLocation+"/default/";
+        return isExist ? path.toString() + "/" : defaultLocation + "/default/";
     }
 
 
@@ -525,8 +494,8 @@ class Parser {
     }
 
 
-    public static String getNameFromLink(String url){
-        String p =".*/([\\S]+)$";
+    public static String getNameFromLink(String url) {
+        String p = ".*/([\\S]+)$";
         Pattern pattern = Pattern.compile(".*\\/([\\S]+)$");
         Matcher matcher = pattern.matcher(url);
         if (matcher.find()) {
@@ -538,8 +507,8 @@ class Parser {
 
     }
 
-    public static String getFirstLink(String url){
-        String p ="\\s*(\\S+)";
+    public static String getFirstLink(String url) {
+        String p = "\\s*(\\S+)";
         Pattern pattern = Pattern.compile(p);
         Matcher matcher = pattern.matcher(url);
         if (matcher.find()) {
@@ -549,8 +518,10 @@ class Parser {
         return "";
 
 
-    } public static String getSecondLink(String url){
-        String p ="\\s*\\S+\\s*:\\s+(\\S+)";
+    }
+
+    public static String getSecondLink(String url) {
+        String p = "\\s*\\S+\\s*:\\s+(\\S+)";
         Pattern pattern = Pattern.compile(p);
         Matcher matcher = pattern.matcher(url);
         if (matcher.find()) {
@@ -561,13 +532,14 @@ class Parser {
 
 
     }
-    public static void saveLastLink(Designer designer){
+
+    public static void saveLastLink(Designer designer) {
         String location = Parser.definitionLocation(designer);
-        File saveState = new File(defaultLocation+"/"+Parser.categoryString + "/" + "save_state.txt");
+        File saveState = new File(defaultLocation + "/" + Parser.categoryString + "/" + "save_state.txt");
 
         try {
-            if (!saveState.exists()){
-                File catalog = new File(location+Parser.categoryString);
+            if (!saveState.exists()) {
+                File catalog = new File(location + Parser.categoryString);
                 catalog.mkdir();
                 saveState.createNewFile();
             }
@@ -575,7 +547,7 @@ class Parser {
             BufferedWriter bw = new BufferedWriter(fw);
 
             String text = designer.getMainUrl();
-            bw.write(text+ " : " + designer.getName() );
+            bw.write(text + " : " + designer.getName());
             bw.flush();
 
 
@@ -583,8 +555,6 @@ class Parser {
             ex.printStackTrace();
         }
     }
-
-
 
 
 }

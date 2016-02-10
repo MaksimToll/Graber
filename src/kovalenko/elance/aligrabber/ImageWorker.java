@@ -15,16 +15,11 @@ import java.util.*;
 public class ImageWorker extends Thread {
     final static Logger logger = Logger.getLogger(ImageWorker.class);
     private static Main main;
-    BehanceGrabber thread;
+
     public ImageWorker(Main main){
         this.main = main;
     }
-    @Override
-    public void run() {
 
-        thread.setDaemon(true);
-        thread.start();
-    }
     public java.util.List<BufferedImage> images = new ArrayList<>();
 
 

@@ -20,6 +20,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -190,6 +191,8 @@ public class BehanceGrabber extends Thread {
 
         try {
 
+            ThreadPoolExecutor executorService = (ThreadPoolExecutor) Executors.newFixedThreadPool(5);
+
             do {
                 urlForStart = (findSavedLink() != null) ? findSavedLink() : Parser.BASE;
                 Parser.getAllDesigner(urlForStart, Parser.categoryNumb);
@@ -206,10 +209,24 @@ public class BehanceGrabber extends Thread {
                     if (isInterrupted()) {
                         break;
                     }
-                    createImages(d);
-                    Parser.saveLastLink(d);
+                    AsyncImageCreator imageWorker = new AsyncImageCreator(main, d);
+                    executorService.execute(imageWorker);
+                    if (iter!= 0 && iter%5==0){
+                        logger.info("wait for ending 5 tasks.");
+
+                        while(executorService.getActiveCount()!=0){
+
+                        }
+                    }
+
+//                    createImages(d);
+//                    Parser.saveLastLink(d);
+
                 }
 
+
+
+                System.err.print("First iteration complite");
                 countParsedProject = Parser.designers.size();
                 if (isInterrupted() || Parser.isFinish) {
                     break;
@@ -217,7 +234,7 @@ public class BehanceGrabber extends Thread {
                 Parser.designers.clear();
 
             } while (true);
-
+            executorService.shutdown();
         } catch (IOException e) {
             logMessage(e.getMessage());
             e.printStackTrace();
@@ -310,7 +327,7 @@ class Parser {
     //
     public static final String BASE = "https://www.behance.net";
     public static final int PER_PAGE = 12;
-    public static final int TIMAUT = 6000;
+    public static final int TIMEAUT = 30000;
     final static Logger logger = Logger.getLogger(Parser.class);
     //for creation request
     public static String defaultLocation = System.getProperties().getProperty("user.home") + "/Behance";
@@ -361,7 +378,7 @@ class Parser {
 
             return resp;
         } catch (SocketTimeoutException ex) {
-            logger.error("can`t conection to link" + url + "  " + ex.getMessage());
+            logger.error("can`t connect to link " + url + "  " + ex.getMessage());
 
         } catch (IOException e) {
             logger.error(e.getMessage());
@@ -372,7 +389,7 @@ class Parser {
 
     public static String getTimestamp(String url) throws IOException {
 
-        Connection.Response resp = getResponseFromUrl(url, TIMAUT);
+        Connection.Response resp = getResponseFromUrl(url, TIMEAUT);
 
         Gson gson = new Gson();
         Data data = gson.fromJson(resp.body(), Data.class);
@@ -384,7 +401,7 @@ class Parser {
         Set<Designer> stringSet = new HashSet<>();
         try {
 
-            Connection.Response resp = getResponseFromUrl(url, TIMAUT);
+            Connection.Response resp = getResponseFromUrl(url, TIMEAUT);
 
             Gson gson = new Gson();
             Data data = gson.fromJson(resp.body(), Data.class);
@@ -426,7 +443,7 @@ class Parser {
         try {
 
 
-            Connection.Response resp = getResponseFromUrl(url, TIMAUT);
+            Connection.Response resp = getResponseFromUrl(url, TIMEAUT);
 
             String country = parseLocation(resp.body());
             author.setCountry(country);
@@ -533,7 +550,7 @@ class Parser {
 
     }
 
-    public static void saveLastLink(Designer designer) {
+    public static synchronized void saveLastLink(Designer designer) {
         String location = Parser.definitionLocation(designer);
         File saveState = new File(defaultLocation + "/" + Parser.categoryString + "/" + "save_state.txt");
 

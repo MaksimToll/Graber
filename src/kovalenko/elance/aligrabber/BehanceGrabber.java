@@ -376,10 +376,11 @@ class Parser {
             for (int i = 0; i < index && index > 0; i++) {
                 designersSet.remove(designersLatIteration.get(i));
             }
-            for (Designer desgn: designersSet
-                 ) {
-                if(desgn.getCountry()==null){
-                    designersSet.remove(desgn);
+            Iterator<Designer> iterator = designersSet.iterator();
+            while(iterator.hasNext()){
+                Designer designer = iterator.next();
+                if(designer.getCountry()!=null){
+                    iterator.remove();
                 }
             }
             designers.addAll(designersSet);

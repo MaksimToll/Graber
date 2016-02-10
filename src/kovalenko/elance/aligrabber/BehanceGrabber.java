@@ -355,7 +355,7 @@ class Parser {
         String timestamp = Parser.getTimestamp(startUrl);
         String url = "";
         int from = ordinal;
-        Set<Designer> designersSet = new HashSet<>();
+        Set<Designer> designersSet = new ConcurrentSkipListSet<>();
 ////////////////////////////////
         String lastPrj = BehanceGrabber.findLastSavedProject();
         Designer desForSaving = new Designer();
@@ -375,6 +375,12 @@ class Parser {
             int index = designersLatIteration.indexOf(desForSaving);
             for (int i = 0; i < index && index > 0; i++) {
                 designersSet.remove(designersLatIteration.get(i));
+            }
+            for (Designer desgn: designersSet
+                 ) {
+                if(desgn.getCountry()==null){
+                    designersSet.remove(desgn);
+                }
             }
             designers.addAll(designersSet);
             ordinal +=PER_PAGE;

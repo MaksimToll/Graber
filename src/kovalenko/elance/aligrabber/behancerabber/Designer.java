@@ -46,4 +46,24 @@ public class Designer {
         this.imageUrl = imageUrl;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Designer designer = (Designer) o;
+
+        if (name != null ? !name.equals(designer.name) : designer.name != null) return false;
+        if (imageUrl != null ? !imageUrl.equals(designer.imageUrl) : designer.imageUrl != null) return false;
+        return mainUrl != null ? mainUrl.equals(designer.mainUrl) : designer.mainUrl == null;
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = name != null ? name.hashCode() : 0;
+        result = 31 * result + (imageUrl != null ? imageUrl.hashCode() : 0);
+        result = 31 * result + (mainUrl != null ? mainUrl.hashCode() : 0);
+        return result;
+    }
 }

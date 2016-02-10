@@ -211,10 +211,10 @@ public class BehanceGrabber extends Thread {
                     }
                     AsyncImageCreator imageWorker = new AsyncImageCreator(main, d);
                     executorService.execute(imageWorker);
-                    if (iter!= 0 && iter%5==0){
+                    if (iter != 0 && iter % 5 == 0) {
                         logger.info("wait for ending 5 tasks.");
 
-                        while(executorService.getActiveCount()!=0){
+                        while (executorService.getActiveCount() != 0) { // code wait when completed all threads
 
                         }
                     }
@@ -223,10 +223,12 @@ public class BehanceGrabber extends Thread {
 //                    Parser.saveLastLink(d);
 
                 }
+                while (executorService.getActiveCount() != 0) { // code wait when completed all threads
+
+                }
 
 
-
-                System.err.print("First iteration complite");
+                System.err.print("First iteration complete");
                 countParsedProject = Parser.designers.size();
                 if (isInterrupted() || Parser.isFinish) {
                     break;
@@ -353,12 +355,46 @@ class Parser {
         String timestamp = Parser.getTimestamp(startUrl);
         String url = "";
         int from = ordinal;
-        for (; ordinal < from + limitOfProject; ordinal += PER_PAGE) { // TODO change it to more logical value, ONLY for test
-            url = BASE + TS + timestamp + ORDINAL + ordinal + PER_P + PER_PAGE + CATEGORY + category + LAST_PART;
-            getProjectLink(url); // return links on projects and fiel designers
+        Set<Designer> designersSet = new HashSet<>();
+////////////////////////////////
+        String lastPrj = BehanceGrabber.findLastSavedProject();
+        Designer desForSaving = new Designer();
+
+        if (!designersLatIteration.isEmpty() && lastPrj != "") {
+            url = new StringBuilder().append(BASE).append(TS).append(timestamp).append(ORDINAL)
+                    .append(ordinal).append(PER_P).append(PER_PAGE).append(CATEGORY)
+                    .append(category).append(LAST_PART).toString();
+            designersSet = getProjectLink(url);
+
+            for (Designer des : designersSet) {
+                if (des.getName().equals(lastPrj)) {
+                    desForSaving = des;
+                }
+            }
+
+            int index = designersLatIteration.indexOf(desForSaving);
+            for (int i = 0; i < index && index > 0; i++) {
+                designersSet.remove(designersLatIteration.get(i));
+            }
+            designers.addAll(designersSet);
+            ordinal +=PER_PAGE;
         }
+/////////////////////////////////
+
+        for (; ordinal < from + limitOfProject; ordinal += PER_PAGE) { // TODO change it to more logical value, ONLY for test
+            url = new StringBuilder().append(BASE).append(TS).append(timestamp).append(ORDINAL)
+                    .append(ordinal).append(PER_P).append(PER_PAGE).append(CATEGORY)
+                    .append(category).append(LAST_PART).toString();
+//            url = BASE + TS + timestamp + ORDINAL + ordinal + PER_P + PER_PAGE + CATEGORY + category + LAST_PART;
+            designersSet = getProjectLink(url);
+            designers.addAll(designersSet); // return links on projects and field designers
+        }
+        designersLatIteration = new ArrayList<>(designersSet);
+
 
     }
+
+    private static ArrayList<Designer> designersLatIteration = new ArrayList<>();
 
     public static Connection.Response getResponseFromUrl(String url, int timeout) {
         try {
@@ -396,7 +432,7 @@ class Parser {
         return data.getTimestamp();
     }
 
-    public static void getProjectLink(String url) {
+    public static Set<Designer> getProjectLink(String url) {
         Designer designer = new Designer();
         Set<Designer> stringSet = new HashSet<>();
         try {
@@ -422,14 +458,16 @@ class Parser {
             if (!designers.isEmpty() && designers.containsAll(stringSet)) {
                 isFinish = true;
             }
-            designers.addAll(stringSet);
+//            designers.addAll(stringSet);
+            return stringSet;
 
         } catch (Exception e) {
             saveLastLink(designer);
             logger.error("can`t download link" + e.getMessage());
-
         }
+        return stringSet;
     }
+
 
     /**
      * accepts linc to project and return links of Images
@@ -537,6 +575,11 @@ class Parser {
 
     }
 
+    /**
+     * find last saved project link
+     * @param url
+     * @return
+     */
     public static String getSecondLink(String url) {
         String p = "\\s*\\S+\\s*:\\s+(\\S+)";
         Pattern pattern = Pattern.compile(p);

@@ -211,22 +211,27 @@ public class BehanceGrabber extends Thread {
                     }
                     AsyncImageCreator imageWorker = new AsyncImageCreator(main, d);
                     executorService.execute(imageWorker);
-                    if (iter != 0 && iter % 5 == 0) {
+//                    if (iter != 0 && iter % 5 == 0) {
                         logger.info("wait for ending 5 tasks.");
 
-                        while (executorService.getActiveCount() != 0) { // code wait when completed all threads
-
-                        }
-                    }
+//                        while (executorService.getActiveCount() != 0) { // code wait when completed all threads
+//                            System.out.println("WTF--------------------------");
+//                        }
+//                    }
 
 //                    createImages(d);
 //                    Parser.saveLastLink(d);
 
                 }
-                while (executorService.getActiveCount() != 0) { // code wait when completed all threads
 
+                while (executorService.getActiveCount() != 0) { // code wait when completed all threads
+                    logger.info("wheit when active count equals 0 ");
                 }
+                long begin = System.currentTimeMillis();
                 executorService.shutdown();
+                System.out.println("Time take a ----------------------------- "+(System.currentTimeMillis() - begin));
+                // final boolean done = executorService.awaitTermination(1, TimeUnit.MINUTES);
+                boolean done = executorService.awaitTermination(1, TimeUnit.MINUTES);
 
 
                 System.err.print("First iteration complete");
@@ -240,6 +245,8 @@ public class BehanceGrabber extends Thread {
             executorService.shutdown();
         } catch (IOException e) {
             logMessage(e.getMessage());
+            e.printStackTrace();
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
         this.main.start.setText("Start");

@@ -191,7 +191,7 @@ public class BehanceGrabber extends Thread {
 
         try {
 
-            ThreadPoolExecutor executorService = (ThreadPoolExecutor) Executors.newFixedThreadPool(5);
+            ThreadPoolExecutor executorService;
 
             do {
                 urlForStart = (findSavedLink() != null) ? findSavedLink() : Parser.BASE;
@@ -202,7 +202,7 @@ public class BehanceGrabber extends Thread {
                 lastProjectlink = findLastSavedProject();
                 int iter = tryGetIterator(authors);
 
-
+                executorService = (ThreadPoolExecutor) Executors.newFixedThreadPool(5);
                 for (; iter < authors.size(); iter++) {
 
                     Designer d = authors.get(iter);
@@ -226,6 +226,7 @@ public class BehanceGrabber extends Thread {
                 while (executorService.getActiveCount() != 0) { // code wait when completed all threads
 
                 }
+                executorService.shutdown();
 
 
                 System.err.print("First iteration complete");
@@ -376,10 +377,11 @@ class Parser {
             for (int i = 0; i < index && index > 0; i++) {
                 designersSet.remove(designersLatIteration.get(i));
             }
-            Iterator<Designer> iterator = designersSet.iterator();
+            Iterator<Designer> iterator = designersLatIteration.iterator();
             while(iterator.hasNext()){
                 Designer designer = iterator.next();
                 if(designer.getCountry()!=null){
+                    designersSet.remove(designer);
                     iterator.remove();
                 }
             }

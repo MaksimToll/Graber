@@ -10,6 +10,7 @@ import org.jsoup.helper.HttpConnection;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import sun.security.krb5.internal.crypto.Des;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -202,7 +203,7 @@ public class BehanceGrabber extends Thread {
                 lastProjectlink = findLastSavedProject();
                 int iter = tryGetIterator(authors);
 
-                executorService = (ThreadPoolExecutor) Executors.newFixedThreadPool(5);
+                executorService = (ThreadPoolExecutor) Executors.newFixedThreadPool(10);
                 for (; iter < authors.size(); iter++) {
 
                     Designer d = authors.get(iter);
@@ -211,22 +212,22 @@ public class BehanceGrabber extends Thread {
                     }
                     AsyncImageCreator imageWorker = new AsyncImageCreator(main, d);
                     executorService.execute(imageWorker);
-//                    if (iter != 0 && iter % 5 == 0) {
-                        logger.info("wait for ending 5 tasks.");
+                    if (iter != 0 && iter % 10 == 0) {
+                        logger.info("wait for ending 10 tasks.");
 
-//                        while (executorService.getActiveCount() != 0) { // code wait when completed all threads
+                        while (executorService.getActiveCount() != 0) { // code wait when completed all threads
 //                            System.out.println("WTF--------------------------");
-//                        }
-//                    }
+                        }
+                    }
 
 //                    createImages(d);
 //                    Parser.saveLastLink(d);
 
                 }
 
-                while (executorService.getActiveCount() != 0) { // code wait when completed all threads
-                    logger.info("wheit when active count equals 0 ");
-                }
+                /*while (executorService.getActiveCount() != 0) { // code wait when completed all threads
+
+                }*/
                 long begin = System.currentTimeMillis();
                 executorService.shutdown();
                 System.out.println("Time take a ----------------------------- "+(System.currentTimeMillis() - begin));
@@ -342,7 +343,7 @@ class Parser {
     //for creation request
     public static String defaultLocation = System.getProperties().getProperty("user.home") + "/Behance";
     public static ArrayList<Designer> designers = new ArrayList<>();
-    public static int limitOfProject = 24;
+    public static int limitOfProject = 180;
     public static String categoryNumb = "108"; // ===>  Advertising
     public static String categoryString = "Advertising";
     public static boolean isFinish = false;
@@ -407,7 +408,19 @@ class Parser {
         }
         designersLatIteration = new ArrayList<>(designersSet);
 
+        tempCountDublicate();
 
+
+    }
+
+    private static void tempCountDublicate(){
+        Set<Designer> nodDuplicate = new HashSet<>();
+        for (Designer d: designers
+             ) {
+            nodDuplicate.add(d);
+        }
+        System.err.print(" count dublicate in designers " +(designers.size()-nodDuplicate.size())/2);
+        System.err.print(" count designers " + designers.size() );
     }
 
     private static ArrayList<Designer> designersLatIteration = new ArrayList<>();

@@ -8,6 +8,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -85,7 +86,12 @@ public class AsyncImageCreator implements Runnable {
     public BufferedImage tryLoadImage(String imageUrl) {
         try {
             URL url = new URL(imageUrl);
-            InputStream in = url.openStream();
+
+            URLConnection testConnection = url.openConnection();
+            testConnection.setConnectTimeout(15000);
+            testConnection.setReadTimeout(15000);
+
+            InputStream in = testConnection.getInputStream();
             BufferedImage image = ImageIO.read(in);
             return image;
         } catch (IOException e) {

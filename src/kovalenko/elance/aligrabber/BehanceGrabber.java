@@ -10,7 +10,6 @@ import org.jsoup.helper.HttpConnection;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import sun.security.krb5.internal.crypto.Des;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -254,7 +253,7 @@ public class BehanceGrabber extends Thread {
         this.main.start.setIcon(new ImageIcon(this.getClass().getResource("/kovalenko/elance/aligrabber/resources/tick-button.png")));
         this.main.changeTargetDirectory.setEnabled(true);
         this.main.pruneTargetDirectory.setEnabled(true);
-        logMessage("Stop  parsing.");
+        logMessage("Parsing completed.");
 
     }
 
@@ -330,10 +329,13 @@ public class BehanceGrabber extends Thread {
 
 class Parser {
 
+    // https://www.behance.net/search?ts=1455270300&ordinal=60&per_page=12&field=5&content=projects&sort=featured_date&time=week&location_id=
+
     public static final String TS = "/search?ts=";
     public static final String ORDINAL = "&ordinal=";
     public static final String PER_P = "&per_page=";
-    public static final String LAST_PART = "&content=projects&sort=appreciations&time=all&location_id=";
+//    public static final String LAST_PART = "&content=projects&sort=appreciations&time=all&location_id=";
+    public static final String LAST_PART = "&content=projects&sort=featured_date&time=week&location_id=";
     public static final String CATEGORY = "&field=";
     //
     public static final String BASE = "https://www.behance.net";
@@ -343,7 +345,7 @@ class Parser {
     //for creation request
     public static String defaultLocation = System.getProperties().getProperty("user.home") + "/Behance";
     public static ArrayList<Designer> designers = new ArrayList<>();
-    public static int limitOfProject = 180;
+    public static int limitOfProject = 150;
     public static String categoryNumb = "108"; // ===>  Advertising
     public static String categoryString = "Advertising";
     public static boolean isFinish = false;
@@ -408,18 +410,17 @@ class Parser {
         }
         designersLatIteration = new ArrayList<>(designersSet);
 
-        tempCountDublicate();
+        tempCountDuplicate();
 
 
     }
 
-    private static void tempCountDublicate(){
+    private static void tempCountDuplicate(){
         Set<Designer> nodDuplicate = new HashSet<>();
-        for (Designer d: designers
-             ) {
+        for (Designer d: designers) {
             nodDuplicate.add(d);
         }
-        System.err.print(" count dublicate in designers " +(designers.size()-nodDuplicate.size())/2);
+        System.err.print(" count duplicate in designers " +(designers.size()-nodDuplicate.size())/2);
         System.err.print(" count designers " + designers.size() );
     }
 

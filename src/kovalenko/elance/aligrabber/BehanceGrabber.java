@@ -191,7 +191,7 @@ public class BehanceGrabber extends Thread {
                 for (; iter < authors.size(); iter++) {
                     projectCounter++;
                     Designer d = authors.get(iter);
-                    if (isInterrupted()) {
+                    if (isInterrupted() |  Parser.isFinish ) {
                         break;
                     }
                     AsyncImageCreator imageWorker = new AsyncImageCreator(main, d);
@@ -203,15 +203,13 @@ public class BehanceGrabber extends Thread {
 //                            System.out.println("WTF--------------------------");
                         }
                     }
-
-//                    createImages(d);
-//                    Parser.saveLastLink(d);
+                    if(isInterrupted()){
+                        executorService.shutdownNow();
+                        break;
+                    }
 
                 }
 
-                /*while (executorService.getActiveCount() != 0) { // code wait when completed all threads
-
-                }*/
                 long begin = System.currentTimeMillis();
                 executorService.shutdown();
                 System.out.println("Time take a ----------------------------- "+(System.currentTimeMillis() - begin));

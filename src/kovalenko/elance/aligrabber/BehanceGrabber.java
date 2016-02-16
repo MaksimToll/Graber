@@ -21,6 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -56,6 +57,8 @@ public class BehanceGrabber extends Thread {
     String lastProjectlink = "";
     int countParsedProject = 0;
 
+    private int projectCounter = 0;
+
     public BehanceGrabber(Main main) {
         this.main = main;
         Properties sysProperties = System.getProperties();
@@ -79,7 +82,7 @@ public class BehanceGrabber extends Thread {
         this.main.start.setIcon(new ImageIcon(this.getClass().getResource("/kovalenko/elance/aligrabber/resources/cross-button.png")));
         lastProjectlink = findLastSavedProject();
         Parser.designers.clear();
-
+        projectCounter = 0;
     }
 
     public static void fillGategories() {
@@ -165,25 +168,7 @@ public class BehanceGrabber extends Thread {
         }
     }
 
-    private void createImages(Designer d) {
-        try {
-            Set<String> tempsLink = Parser.parseImageLinks(d.getImageUrl(), d);
-            ImageWorker grabber = new ImageWorker(this.main);
-            if (tempsLink.isEmpty()) {
-                logMessage("Url not parsed " + d.getImageUrl() + "\n");
-            } else {
-                for (String link : tempsLink) {
 
-                    grabber.addImage(tryLoadImage(link), d, false);
-                }
-            }
-            if (expectedImages > tempsLink.size()) { //if files in project less than expectedImages size
-                grabber.addImage(null, d, true);
-            }
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-        }
-    }
 
     public void parse() {
 
@@ -204,7 +189,7 @@ public class BehanceGrabber extends Thread {
 
                 executorService = (ThreadPoolExecutor) Executors.newFixedThreadPool(10);
                 for (; iter < authors.size(); iter++) {
-
+                    projectCounter++;
                     Designer d = authors.get(iter);
                     if (isInterrupted()) {
                         break;
@@ -250,10 +235,11 @@ public class BehanceGrabber extends Thread {
             e.printStackTrace();
         }
         this.main.start.setText("Start");
+        this.main.state.setText("");
         this.main.start.setIcon(new ImageIcon(this.getClass().getResource("/kovalenko/elance/aligrabber/resources/tick-button.png")));
         this.main.changeTargetDirectory.setEnabled(true);
         this.main.pruneTargetDirectory.setEnabled(true);
-        logMessage("Parsing completed.");
+        logMessage("Parsing completed.  Count of project is "+ projectCounter );
 
     }
 
@@ -334,8 +320,8 @@ class Parser {
     public static final String TS = "/search?ts=";
     public static final String ORDINAL = "&ordinal=";
     public static final String PER_P = "&per_page=";
-//    public static final String LAST_PART = "&content=projects&sort=appreciations&time=all&location_id=";
-    public static final String LAST_PART = "&content=projects&sort=featured_date&time=week&location_id=";
+    public static final String LAST_PART = "&content=projects&sort=appreciations&time=all&location_id=";
+//    public static final String LAST_PART = "&content=projects&sort=featured_date&time=week&location_id=";
     public static final String CATEGORY = "&field=";
     //
     public static final String BASE = "https://www.behance.net";
@@ -345,10 +331,12 @@ class Parser {
     //for creation request
     public static String defaultLocation = System.getProperties().getProperty("user.home") + "/Behance";
     public static ArrayList<Designer> designers = new ArrayList<>();
-    public static int limitOfProject = 150;
+    public static int limitOfProject = 180;
     public static String categoryNumb = "108"; // ===>  Advertising
     public static String categoryString = "Advertising";
     public static boolean isFinish = false;
+
+
 
     public static void getAllDesigner(String startUrl, String category) throws IOException {
         int ordinal = 0;

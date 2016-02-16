@@ -7,6 +7,7 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -112,13 +113,14 @@ public class ImageWorker extends Thread {
                     itr +=imagesInRow;
                 }
             }
-            int tempBgW = 0;
+            int attemptCounter = 0;
 
-
+            String location = null;
+            String nameFromLink;
             try {
                 //For windows
-                String location = Parser.definitionLocation(designer);
-                String nameFromLink = Parser.getNameFromLink(designer.getName());
+                location = Parser.definitionLocation(designer);
+                nameFromLink = Parser.getNameFromLink(designer.getName());
                 if (nameFromLink.isEmpty()||nameFromLink==null){
 
                     logger.error("can`t parse the link name "+ designer.getName());
@@ -139,9 +141,23 @@ public class ImageWorker extends Thread {
                 }
                 ImageIO.write(finalImage, "jpg", imageFile);// TODO create method for creation correct name
                 BehanceGrabber.logMessage(this.main, "file is saved " + imageFile.getPath(), logger);
-            } catch (Exception e) {
-                Parser.saveLastLink(designer);
-                logger.error(e.getMessage()+designer.getName());
+                attemptCounter = 0;
+            } catch (IOException e) {
+
+                if(attemptCounter > 4){
+                    Parser.isFinish = true;
+                }
+                attemptCounter++;
+                BehanceGrabber.logMessage(this.main, "Cant`t save file "+location, logger);
+                logger.error(e.getMessage(), e);
+            }catch (Exception e) {
+                if(attemptCounter > 4){
+                    Parser.isFinish = true;
+                }
+                attemptCounter++;
+
+                BehanceGrabber.logMessage(this.main, "Cant`t save file "+location, logger);
+                logger.error(e.getMessage(), e);
 
             }
 

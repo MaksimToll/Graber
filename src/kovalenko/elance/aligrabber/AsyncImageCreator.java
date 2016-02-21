@@ -38,43 +38,19 @@ public class AsyncImageCreator implements Runnable {
             ArrayList<String> tempsLink = new ArrayList<>(Parser.parseImageLinks(d.getImageUrl(), d));
 
             ImageWorker grabber = new ImageWorker(this.main);
-           ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(10);
-
             if (tempsLink.isEmpty()) {
                 System.out.print("Project not parsed " + d.getImageUrl() + "\n");
             } else {
-                 /*
-                List<Future<BufferedImage>> images = new ArrayList<>();
-                int counter = 0;
-            
-                for (String link: tempsLink) {
-                    ImageLoader loader = new ImageLoader(link);
-                    Future<BufferedImage> future = threadPoolExecutor.submit(loader);
-                    images.add(future);
-                    if(images.size()==9) {
-                        for (Future<BufferedImage> f: images
-                             ) {
-                            grabber.addImage(f.get(), d, false);
-                        }
-                       images.clear();
-                    }
-                }
-
-                if (images.size()<10){
-                    if(images.size()==9) {
-                        for (Future<BufferedImage> f: images
-                                ) {
-                            grabber.addImage(f.get(), d, false);
-                        }
-                        images.clear();
-                    }
-                }*/
 
                 for (String link : tempsLink) {
-                    grabber.addImage(tryLoadImage(link), d, false);
+                    boolean limitReached = ! grabber.addImage(tryLoadImage(link), d, false);
+                    if(limitReached){
+                        break;
+                    }
                 }
             }
             if (BehanceGrabber.expectedImages > tempsLink.size()) { //if files in project less than expectedImages size
+
                 grabber.addImage(null, d, true);
             }
 

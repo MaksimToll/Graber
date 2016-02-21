@@ -10,6 +10,15 @@ public class Designer {
     private String name;
     private String country;
     private String imageUrl;
+    private boolean notPars;
+
+    public boolean isNotPars() {
+        return notPars;
+    }
+
+    public void setNotPars(boolean notPars) {
+        this.notPars = notPars;
+    }
 
     public String getMainUrl() {
         return mainUrl;

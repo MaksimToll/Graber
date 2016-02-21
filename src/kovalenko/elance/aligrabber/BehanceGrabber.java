@@ -19,9 +19,9 @@ import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -179,11 +179,16 @@ public class BehanceGrabber extends Thread {
             ThreadPoolExecutor executorService;
 
             do {
+
+
+
                 urlForStart = (findSavedLink() != null) ? findSavedLink() : Parser.BASE;
                 Parser.getAllDesigner(urlForStart, Parser.categoryNumb);
 
                 logMessage("End iteration . Total parsed " + Parser.designers.size() + " links. try to get pictures");
                 ArrayList<Designer> authors = Parser.designers;
+
+
                 lastProjectlink = findLastSavedProject();
                 int iter = tryGetIterator(authors);
 
@@ -191,6 +196,9 @@ public class BehanceGrabber extends Thread {
                 for (; iter < authors.size(); iter++) {
                     projectCounter++;
                     Designer d = authors.get(iter);
+                    if(hasAutorsLimit(d)){
+                        continue;
+                    }
                     if (isInterrupted()) {
                         break;
                     }
@@ -204,8 +212,7 @@ public class BehanceGrabber extends Thread {
                         }
                     }
 
-//                    createImages(d);
-//                    Parser.saveLastLink(d);
+
 
                 }
 
@@ -225,6 +232,7 @@ public class BehanceGrabber extends Thread {
                     break;
                 }
                 Parser.designers.clear();
+                Parser.autorsNames.clear();;
 
             } while (true);
             executorService.shutdown();
@@ -294,6 +302,20 @@ public class BehanceGrabber extends Thread {
         return resultLink;
     }
 
+    private static boolean hasAutorsLimit(Designer des){
+        Path root = Paths.get(Parser.defaultLocation, Parser.categoryString);
+        try {
+            return Files.walk(root, 1)
+                    .filter(p-> Files.isDirectory(p))
+                    .map(p-> p.resolve(Parser.getNameFromLink(des.getName()+"_5.jpg")))
+                    .anyMatch(p-> Files.exists(p));
+        } catch (IOException e) {
+            logger.error(e.getMessage(), e);
+
+        }
+        return false;
+    }
+
     public BufferedImage tryLoadImage(String imageUrl) {
         try {
             URL url = new URL(imageUrl);
@@ -335,6 +357,8 @@ class Parser {
     public static String categoryNumb = "108"; // ===>  Advertising
     public static String categoryString = "Advertising";
     public static boolean isFinish = false;
+
+    public static int numberOfPages = 5;
 
 
 
@@ -496,6 +520,7 @@ class Parser {
     public static Set<String> parseImageLinks(String url, Designer author) {
 
         Set<String> links = new HashSet<>();
+        String link="";
         try {
 
 
@@ -507,14 +532,13 @@ class Parser {
             String t = "src\\s*\":\\s*\"(([^\"])+)\""; // take the part of url
             Pattern pattern = Pattern.compile(t);
             Matcher mathces = pattern.matcher(resp.body());
-            while (mathces.find()) {
-                String link = mathces.group().replaceAll("\\\\", "");
+            while (mathces.find() && links.size()<= BehanceGrabber.expectedImages * numberOfPages) { // check if count of links are less then we need.
+               link = mathces.group().replaceAll("\\\\", "");
 
                 if (link.contains("disp")) {//TODO change it. Better way to chose link
                     if (!links.contains(link.replaceAll("src\":\"", "").replaceAll("\"", ""))) {
                         links.add(link.replaceAll("src\":\"", "").replaceAll("\"", ""));
                     }
-
                 }
 
             }
@@ -522,7 +546,7 @@ class Parser {
 
             return links;
         } catch (Exception ex) {
-            logger.error(" Can`t parse link.", ex);
+            logger.error(" Can`t parse link - "+link, ex);
             return links;
         }
 
@@ -577,6 +601,51 @@ class Parser {
 
         return "";
 
+    }
+
+    public static int getNumberOfPicture(String fileName){
+        int res = 0;
+        try {
+            Pattern pattern = Pattern.compile("_(\\d+).jpg$");
+            Matcher matcher = pattern.matcher(fileName);
+
+            if (matcher.find()) {
+                int current = Integer.parseInt(matcher.group());
+                return  current;
+            }
+        } catch (Exception ex){
+            logger.error("Cant parse number of image. file = "+fileName, ex);
+        }
+        return res;
+    }
+
+    private static String getNameFromFile(String name){
+        Pattern pattern = Pattern.compile("(\\S+)_\\d+.jpg");
+        Matcher matcher = pattern.matcher(name);
+        if (matcher.find()) {
+            return matcher.group();
+        }
+        return "";
+    }
+
+    public static synchronized void markExistingDesigner(Designer designer){
+        String desName = getNameFromLink(designer.getName());
+        List<String> listN = new ArrayList<>();
+
+        for (String name: autorsNames) {
+            String cleanName = getNameFromFile(name);
+            if(cleanName.equals(desName)){
+                listN.add(name);
+            }
+        }
+        int counter =0;
+        for(int i =0 ; i< listN.size(); i++){
+            counter = Math.max(counter, getNumberOfPicture(listN.get(i)));
+        }
+        if(counter>=5){
+            designer.setNotPars(true);
+        }
+
 
     }
 
@@ -589,7 +658,6 @@ class Parser {
         }
 
         return "";
-
 
     }
 
@@ -608,7 +676,26 @@ class Parser {
 
         return "";
 
+    }
 
+
+    static ArrayList<String> autorsNames = new ArrayList<>();
+
+    public static void listFilesForFolder(final File folder) {
+        try {
+            if (folder.exists()) {
+                for (final File fileEntry : folder.listFiles()) {
+                    if (fileEntry.isDirectory()) {
+                        listFilesForFolder(fileEntry);
+                    } else {
+                        autorsNames.add(fileEntry.getName());
+                        System.out.println(fileEntry.getName());
+                    }
+                }
+            }
+        }catch(Exception ex){
+            logger.error("can`t find files by this path - "+ folder, ex);
+        }
     }
 
     public static synchronized void saveLastLink(Designer designer) {
@@ -617,8 +704,8 @@ class Parser {
 
         try {
             if (!saveState.exists()) {
-                File catalog = new File(location + Parser.categoryString);
-                catalog.mkdir();
+//                File catalog = new File(location + Parser.categoryString);
+//                catalog.mkdir();
                 saveState.createNewFile();
             }
             FileWriter fw = new FileWriter(saveState.getAbsoluteFile());

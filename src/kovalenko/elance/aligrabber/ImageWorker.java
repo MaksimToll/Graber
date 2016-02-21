@@ -25,7 +25,7 @@ public class ImageWorker extends Thread {
 
 
 
-    public synchronized void addImage(BufferedImage image, Designer designer, boolean forseWrite) {
+    public synchronized boolean addImage(BufferedImage image, Designer designer, boolean forseWrite) {
 
         if (image != null) {
             this.images.add(image);
@@ -83,7 +83,7 @@ public class ImageWorker extends Thread {
 
             if(finalHeight<=1 || finalWidth<=1){
                 logger.error("small size  h = "+finalHeight+" witdth = "+ finalHeight);
-                return;
+                return forseWrite;
             }
             BufferedImage finalImage = new BufferedImage(finalWidth, finalHeight, BufferedImage.TYPE_INT_RGB);
             Graphics2D g2d = finalImage.createGraphics();
@@ -124,24 +124,25 @@ public class ImageWorker extends Thread {
                 if (nameFromLink.isEmpty()||nameFromLink==null){
 
                     logger.error("can`t parse the link name "+ designer.getName());
-                    return;
+                    return forseWrite;
                 }
                 int counter = 1;
                 File imageFile = new File(location + nameFromLink+"_" + counter+ ".jpg"); // for windows
-//                File imageFile = new File(Parser.definitionLocation(designer) + designer.getName().replaceAll("\\/", "_") + ".jpg"); // for linux
-//                File imageFile = new File(location + designer.getName() + ".jpg"); // for Mac
+
                 if (imageFile.isFile()) {
 
                     do {
                         imageFile = new File(location + nameFromLink + "_"  + ++counter + ".jpg"); // for windows
-//                        imageFile = new File(location + designer.getName() + ++counter + ".jpg"); // for mac
-//                        imageFile = new File(Parser.definitionLocation(designer) + designer.getName().replaceAll("\\/", "_") + "_" + ++counter + ".jpg"); for linux
-
                     } while (imageFile.isFile());
                 }
                 ImageIO.write(finalImage, "jpg", imageFile);// TODO create method for creation correct name
                 BehanceGrabber.logMessage(this.main, "file is saved " + imageFile.getPath(), logger);
                 attemptCounter = 0;
+                if(counter >= Parser.numberOfPages) {
+                    return false;
+                }
+
+                return true;
             } catch (IOException e) {
 
                 if(attemptCounter > 4){
@@ -172,6 +173,7 @@ public class ImageWorker extends Thread {
 
         }
 
+        return true;
     }
 
 

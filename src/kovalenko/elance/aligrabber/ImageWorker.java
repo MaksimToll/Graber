@@ -124,7 +124,7 @@ public class ImageWorker extends Thread {
                 if (nameFromLink.isEmpty()||nameFromLink==null){
 
                     logger.error("can`t parse the link name "+ designer.getName());
-                    return forseWrite;
+                    return false;
                 }
                 int counter = 1;
                 File imageFile = new File(location + nameFromLink+"_" + counter+ ".jpg"); // for windows
@@ -138,6 +138,15 @@ public class ImageWorker extends Thread {
                 ImageIO.write(finalImage, "jpg", imageFile);// TODO create method for creation correct name
                 BehanceGrabber.logMessage(this.main, "file is saved " + imageFile.getPath(), logger);
                 attemptCounter = 0;
+
+                finalImage.flush();
+
+                it = this.images.iterator();
+                while (it.hasNext()) {
+                    it.next().flush();
+                }
+                this.images.clear();
+
                 if(counter >= Parser.numberOfPages) {
                     return false;
                 }
@@ -162,13 +171,7 @@ public class ImageWorker extends Thread {
 
             }
 
-            finalImage.flush();
 
-            it = this.images.iterator();
-            while (it.hasNext()) {
-                it.next().flush();
-            }
-            this.images.clear();
             // place for save state
 
         }

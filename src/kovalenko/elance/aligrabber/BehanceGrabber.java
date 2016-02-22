@@ -227,7 +227,7 @@ public class BehanceGrabber extends Thread {
 
                 long begin = System.currentTimeMillis();
                 executorService.shutdown();
-                System.out.println("Time take a ----------------------------- "+(System.currentTimeMillis() - begin));
+
                 // final boolean done = executorService.awaitTermination(1, TimeUnit.MINUTES);
                 boolean done = executorService.awaitTermination(1, TimeUnit.MINUTES);
 
@@ -538,7 +538,7 @@ class Parser {
             String t = "src\\s*\":\\s*\"(([^\"])+)\""; // take the part of url
             Pattern pattern = Pattern.compile(t);
             Matcher mathces = pattern.matcher(resp.body());
-            while (mathces.find() && links.size()<= BehanceGrabber.expectedImages * (numberOfPages+1)) { // check if count of links are less then we need.
+            while (mathces.find() && links.size()<= BehanceGrabber.expectedImages * (numberOfPages+2)) { // check if count of links are less then we need.
                link = mathces.group().replaceAll("\\\\", "");
 
                 if (link.contains("disp")) {//TODO change it. Better way to chose link

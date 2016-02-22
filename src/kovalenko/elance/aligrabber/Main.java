@@ -21,6 +21,8 @@ public class Main extends javax.swing.JFrame {
     final public static String PREFS_FRAME_WIDTH = "FRAME_WIDTH";
     final public static String PREFS_FRAME_HEIGHT = "FRAME_HEIGHT";
     final public static String PREFS_TARGET_DIRECTORY = "TARGET_DIRECTORY";
+
+    final public static String PREFS_LIMIT_IMAGES = "LIMIT_IMAGES";
     final public static String PREFS_USE_PROXY_SERVER = "USE_PROXY_SERVER";
     final public static String PREFS_PROXY_SERVER = "PROXY_SERVER";
     final public static String PREFS_MAX_ACTIVE_THREADS = "MAX_ACTIVE_THREADS";
@@ -92,6 +94,7 @@ public class Main extends javax.swing.JFrame {
 
 //        this.url.setText( this.prefs.get( Main.PREFS_LAST_URL, "" ) );
         this.targetDirectory.setText( this.prefs.get( Main.PREFS_TARGET_DIRECTORY, "" ) );
+        this.limitOfImages.setValue(this.prefs.getInt(Main.PREFS_LIMIT_IMAGES, 5));
 //        this.useProxyServer.setSelected( this.prefs.getBoolean( Main.PREFS_USE_PROXY_SERVER, false ) );
 //        this.proxyServer.setEditable( this.useProxyServer.isSelected() );
         this.proxyServer.setText( this.prefs.get( Main.PREFS_PROXY_SERVER, "" ) );
@@ -189,6 +192,9 @@ public class Main extends javax.swing.JFrame {
         jButton1 = new javax.swing.JButton();
         jLabel6 = new javax.swing.JLabel();
         spaceBetweenImages = new javax.swing.JSpinner();
+        jLimitImage = new javax.swing.JLabel();
+
+        limitOfImages = new javax.swing.JSpinner();
         jLabel8 = new javax.swing.JLabel();
         backgroundColor = new javax.swing.JLabel();
         jLabel9 = new javax.swing.JLabel();
@@ -425,6 +431,7 @@ public class Main extends javax.swing.JFrame {
                                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                         .addGroup(jPanel2Layout.createSequentialGroup()
                                                 .addComponent(pagesLimit, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+
                                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                                 .addComponent(jLabel4))
                                         .addGroup(jPanel2Layout.createSequentialGroup()
@@ -463,8 +470,15 @@ public class Main extends javax.swing.JFrame {
         jLabel6.setHorizontalAlignment(javax.swing.SwingConstants.TRAILING);
         jLabel6.setText("Space between images:");
 
+        jLimitImage.setFont(new java.awt.Font("Dialog", 0, 11));
+        jLimitImage.setHorizontalAlignment(SwingConstants.TRAILING);
+        jLimitImage.setText(" limit of created image(s) ");
+
         spaceBetweenImages.setFont(new java.awt.Font("Dialog", 0, 11)); // NOI18N
         spaceBetweenImages.setModel(new javax.swing.SpinnerNumberModel(10, 0, 500, 1));
+
+        limitOfImages.setFont(new java.awt.Font("Dialog", 0, 11));
+        limitOfImages.setModel(new javax.swing.SpinnerNumberModel(5, 1, 15, 1 ));
 
         jLabel8.setFont(new java.awt.Font("Dialog", 0, 11)); // NOI18N
         jLabel8.setText("pixel(s)");
@@ -497,14 +511,19 @@ public class Main extends javax.swing.JFrame {
                                         .addGroup(jPanel3Layout.createSequentialGroup()
                                                 .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
                                                         .addComponent(jLabel9, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                                        .addComponent(jLabel6, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                                                        .addComponent(jLabel6, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                                        .addComponent(jLimitImage, GroupLayout.Alignment.LEADING, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                                 .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                                         .addGroup(jPanel3Layout.createSequentialGroup()
                                                                 .addComponent(spaceBetweenImages, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                                                 .addComponent(jLabel8))
+                                                                .addComponent(jLimitImage)
+                                                                .addComponent(limitOfImages, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+
                                                         .addComponent(imagesInRow, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                                .addComponent(limitOfImages, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE).addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         jPanel3Layout.setVerticalGroup(
@@ -520,6 +539,17 @@ public class Main extends javax.swing.JFrame {
                                         .addComponent(spaceBetweenImages, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                         .addComponent(jLabel8))
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+
+
+                                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                        .addComponent(jLimitImage)
+                                        .addComponent(limitOfImages, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+
+//                                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+
+
                                 .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                                         .addComponent(jLabel9)
                                         .addComponent(imagesInRow, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
@@ -696,6 +726,7 @@ public class Main extends javax.swing.JFrame {
         this.prefs.putInt( Main.PREFS_FRAME_WIDTH, this.getWidth() );
         this.prefs.putInt( Main.PREFS_FRAME_HEIGHT, this.getHeight() );
         // Save settings.
+        this.prefs.put( Main.PREFS_LIMIT_IMAGES, this.limitOfImages.getValue().toString() );
         this.prefs.put( Main.PREFS_TARGET_DIRECTORY, this.targetDirectory.getText() );
         this.prefs.put( Main.PREFS_PROXY_SERVER, this.proxyServer.getText() );
         this.prefs.putInt( Main.PREFS_MAX_ACTIVE_THREADS, Integer.parseInt( this.countProjectForParsing.getValue().toString() ) );
@@ -872,6 +903,9 @@ public class Main extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
+    private javax.swing.JLabel jLimitImage;
+
+
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JTabbedPane jTabbedPane1;
     protected javax.swing.JSpinner countProjectForParsing;
@@ -883,6 +917,8 @@ public class Main extends javax.swing.JFrame {
     private javax.swing.JPanel settingsPanel;
     protected javax.swing.JSpinner spaceBetweenImages;
     protected javax.swing.JSpinner spaceLimit;
+    protected javax.swing.JSpinner limitOfImages;
+
     protected javax.swing.JButton start;
     protected javax.swing.JLabel state;
     protected javax.swing.JTextField targetDirectory;

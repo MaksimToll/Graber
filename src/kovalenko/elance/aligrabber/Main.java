@@ -2,15 +2,15 @@ package kovalenko.elance.aligrabber;
 
 import org.apache.log4j.Logger;
 
-import java.awt.*;
-import java.util.ArrayList;
-import java.util.prefs.BackingStoreException;
-import java.util.prefs.Preferences;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.plaf.FontUIResource;
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.prefs.BackingStoreException;
+import java.util.prefs.Preferences;
 
 public class Main extends javax.swing.JFrame {
     final static Logger logger = Logger.getLogger(Main.class);
@@ -769,7 +769,14 @@ public class Main extends javax.swing.JFrame {
                 this.pruneTargetDirectory.setEnabled( false );
 
                 state.setText("working...");
-                this.grabber = new BehanceGrabber(this);
+                if(grabber!=null){
+                    grabber.interrupt();
+                }
+                try {
+                    this.grabber = new BehanceGrabber(this);
+                }catch (BehanceException ex){
+                    JOptionPane.showMessageDialog(null, "Target directory doesnt exist ", "Error", JOptionPane.ERROR_MESSAGE);
+                }
                 grabber.setDaemon(true);
                 this.grabber.start();
 

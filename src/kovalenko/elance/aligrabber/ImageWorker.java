@@ -7,15 +7,15 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
 
-/**
- * Created by mtol on 01.02.2016.
- */
 public class ImageWorker extends Thread {
     final static Logger logger = Logger.getLogger(ImageWorker.class);
     private static Main main;
+    int attemptCounter = 0;
 
     public ImageWorker(Main main){
         this.main = main;
@@ -35,7 +35,7 @@ public class ImageWorker extends Thread {
             }
 //            return;
         }
-        if ((this.images.size() == BehanceGrabber.expectedImages && BehanceGrabber.expectedImages > 0) || forseWrite) {
+        if ((this.images.size() == BehanceGrabber.expectedImages) || forseWrite) {
             int maxWidth = 0;
             int maxHeight = 0;
 
@@ -113,7 +113,6 @@ public class ImageWorker extends Thread {
                     itr +=imagesInRow;
                 }
             }
-            int attemptCounter = 0;
 
             String location = null;
             String nameFromLink;
@@ -121,7 +120,7 @@ public class ImageWorker extends Thread {
                 //For windows
                 location = Parser.definitionLocation(designer);
                 nameFromLink = Parser.getNameFromLink(designer.getName());
-                if (nameFromLink.isEmpty()||nameFromLink==null){
+                if (nameFromLink.isEmpty()){
 
                     logger.error("can`t parse the link name "+ designer.getName());
                     return false;
@@ -136,7 +135,7 @@ public class ImageWorker extends Thread {
                     } while (imageFile.isFile());
                 }
                 ImageIO.write(finalImage, "jpg", imageFile);// TODO create method for creation correct name
-                BehanceGrabber.logMessage(this.main, "file is saved " + imageFile.getPath(), logger);
+                BehanceGrabber.logMessage(main, "file is saved " + imageFile.getPath(), logger);
                 attemptCounter = 0;
 
                 finalImage.flush();
@@ -147,26 +146,15 @@ public class ImageWorker extends Thread {
                 }
                 this.images.clear();
 
-                if(counter >= Parser.numberOfPages) {
-                    return false;
-                }
+                return counter < Parser.numberOfPages;
 
-                return true;
-            } catch (IOException e) {
-
-                if(attemptCounter > 4){
-                    Parser.isFinish = true;
-                }
-                attemptCounter++;
-                BehanceGrabber.logMessage(this.main, "Cant`t save file "+location, logger);
-                logger.error(e.getMessage(), e);
-            }catch (Exception e) {
+            } catch (Exception e) {
                 if(attemptCounter > 4){
                     Parser.isFinish = true;
                 }
                 attemptCounter++;
 
-                BehanceGrabber.logMessage(this.main, "Cant`t save file "+location, logger);
+                BehanceGrabber.logMessage(main, "Cant`t save file "+location, logger);
                 logger.error(e.getMessage(), e);
 
             }

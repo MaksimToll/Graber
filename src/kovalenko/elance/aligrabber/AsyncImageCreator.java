@@ -10,12 +10,6 @@ import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * Created by mtol on 08.02.2016.
@@ -59,6 +53,7 @@ public class AsyncImageCreator implements Runnable {
             logger.error(e.getMessage());
         }
     }
+    private int counter = 0;
     public BufferedImage tryLoadImage(String imageUrl) {
         try {
             URL url = new URL(imageUrl);
@@ -69,15 +64,18 @@ public class AsyncImageCreator implements Runnable {
 
             InputStream in = testConnection.getInputStream();
             BufferedImage image = ImageIO.read(in);
+            counter=0;
             return image;
         } catch (IOException e) {
             System.err.print("can`t load image -> " + imageUrl + "\n error message --> " + e.getMessage());
+            if(counter++<5){
+                logger.warn("Can`t load url "+ imageUrl, e);
+                return tryLoadImage(imageUrl);
+            }
 
 
-        } catch (Exception exception) {
-            logger.error(exception.getMessage() + " " + imageUrl);
         }
-        return null;
+        throw new RuntimeException("Can`t load data from internet, check internet connection and start loading again. ");
     }
 
     @Override

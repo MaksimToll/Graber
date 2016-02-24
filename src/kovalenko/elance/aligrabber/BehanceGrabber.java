@@ -15,13 +15,16 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
-import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -68,6 +71,10 @@ public class BehanceGrabber extends Thread {
         properties.setProperty("limitImages", this.main.limitOfImages.getValue().toString());
         if (properties.getProperty("targetDirectory") != null && !properties.getProperty("targetDirectory").isEmpty()) {
             Parser.defaultLocation = properties.getProperty("targetDirectory");
+            Path path =  Paths.get(Parser.defaultLocation);
+            if(!Files.exists(path)){
+                throw new BehanceException();
+            }
         }
 //        Parser.limitOfProject = Integer.parseInt(main.limitOfImages.getValue().toString());
 
@@ -138,6 +145,8 @@ public class BehanceGrabber extends Thread {
         logger.debug(message);
     }
 
+    boolean stopedDueToException = false;
+
     public void run() {
 
         try {
@@ -164,17 +173,41 @@ public class BehanceGrabber extends Thread {
             }
             Parser.numberOfPages = Integer.parseInt(this.main.limitOfImages.getValue().toString());
 
-            parse();
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            this.main.start.setText("Start");
+
+            this.main.state.setText( " error occurred");
+        }
+
+        parceWraper();
+    }
+    private void parceWraper()  {
+        try {
+            parse();
+        } catch (Exception e) {
+            try {
+                logger.error(e.getMessage(), e);
+                logMessage(e.getMessage());
+                this.main.start.setText("Start");
+                this.main.state.setText( " error occurred");
+                this.main.start.setIcon(new javax.swing.ImageIcon(getClass().getResource("/kovalenko/elance/aligrabber/resources/tick-button.png")));
+                Thread.sleep(5*60*1000);
+                parceWraper();
+            } catch (InterruptedException e1) {
+                logger.error(e.getMessage(), e);
+            }
+
+
         }
     }
 
-
-
     public void parse() {
 
+        this.main.start.setText("Stop");
+        main.state.setText("working...");
+        this.main.start.setIcon(new javax.swing.ImageIcon(getClass().getResource("/kovalenko/elance/aligrabber/resources/cross-button.png")));
         logMessage("Begin ");
 
         try {
@@ -311,7 +344,8 @@ public class BehanceGrabber extends Thread {
     private static boolean hasAutorsLimit(Designer des){
         Path root = Paths.get(Parser.defaultLocation, Parser.categoryString);
         try {
-            return Files.walk(root, 1)
+            if(Files.exists(root))
+                return Files.walk(root, 1)
                     .filter(p-> Files.isDirectory(p))
                     .map(p-> p.resolve(Parser.getNameFromLink(des.getName()+"_5.jpg")))
                     .anyMatch(p-> Files.exists(p));
@@ -444,6 +478,8 @@ class Parser {
 
     private static ArrayList<Designer> designersLatIteration = new ArrayList<>();
 
+    private static AtomicInteger counter = new AtomicInteger(0);
+
     public static Connection.Response getResponseFromUrl(String url, int timeout) {
         try {
             Connection con = HttpConnection.connect(url);
@@ -459,15 +495,16 @@ class Parser {
 
 
             Connection.Response resp = con.execute();
-
+            counter.set(0);
             return resp;
-        } catch (SocketTimeoutException ex) {
-            logger.error("can`t connect to link " + url + "  " + ex.getMessage());
+        } catch ( IOException ex) {
+            if(counter.incrementAndGet() < 5 ){
+                logger.error("can`t connect to link " + url + "  " + ex.getMessage());
 
-        } catch (IOException e) {
-            logger.error(e.getMessage());
+                return getResponseFromUrl(url, timeout);
+            }
         }
-        return null;
+        throw new RuntimeException("Can`t load data from internet, check internet connection and start loading again. ");
 
     }
 
@@ -568,14 +605,19 @@ class Parser {
         }
         if (author.getCountry() != null && Files.notExists(path)) {
             try {
-                isExist = dir.mkdirs();
+                isExist =dir.exists() || dir.mkdirs();
             } catch (SecurityException e) {
                 logger.error(" creating dir for ");
                 e.printStackTrace();
             }
 
         }
-        return isExist ? path.toString() + "/" : defaultLocation + "/default/";
+        if(isExist){
+            return path.toString() + "/";
+        } else {
+            throw new RuntimeException("Can`t create directory "+ path);
+        }
+
     }
 
 
